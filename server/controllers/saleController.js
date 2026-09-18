@@ -25,6 +25,10 @@ exports.createSale = async (req, res, next) => {
       await session.abortTransaction();
       return res.status(400).json({ success: false, message: 'Sale must have items' });
     }
+    if (!['cash', 'bank', 'paystack'].includes(paymentMethod)) {
+      await session.abortTransaction();
+      return res.status(400).json({ success: false, message: 'Payment method must be cash, bank, or paystack' });
+    }
 
     const productIds = items.map((i) => i.product);
     const products = await Product.find({ _id: { $in: productIds }, isActive: true }).session(session);
