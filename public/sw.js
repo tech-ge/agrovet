@@ -7,7 +7,7 @@
  *   - Navigation requests: Network-First falling back to cached shell
  */
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.1.0';
 const SHELL_CACHE = `agrovet-shell-${VERSION}`;
 const ASSETS_CACHE = `agrovet-assets-${VERSION}`;
 const API_CACHE = `agrovet-api-${VERSION}`;
