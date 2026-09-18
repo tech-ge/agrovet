@@ -37,6 +37,7 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/sales', require('./routes/sales'));
+app.use('/api/payments', require('./routes/payments'));
 app.use('/api/reports', require('./routes/reports'));
 
 app.get('/api/health', (req, res) =>
