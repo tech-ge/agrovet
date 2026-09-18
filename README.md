@@ -1,4 +1,4 @@
-# Tech Agrovet — Stock Management System
+# Karen Agrovet — Stock Management System
 
 A clean, full-stack agrovet stock management system built with **Node.js, Express, MongoDB** and a vanilla **HTML/CSS/JS** admin frontend. Includes **PWA support** with full offline caching via a service worker.
 
