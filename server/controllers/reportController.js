@@ -90,7 +90,6 @@ exports.getProfitLoss = async (req, res, next) => {
         },
       },
       { $sort: { revenue: -1 } },
-      { $limit: 10 },
     ]);
 
     res.json({
