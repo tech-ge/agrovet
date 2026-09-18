@@ -164,15 +164,15 @@ const Products = (() => {
           <input class="input" name="supplier" value="${App.escapeHtml(p.supplier || '')}" />
         </div>
         <div class="form-group">
-          <label>Cost Price *</label>
+          <label>Buying Price *</label>
           <input class="input" type="number" step="0.01" min="0" name="costPrice" required value="${p.costPrice}" />
         </div>
         <div class="form-group">
-          <label>Selling Price *</label>
+          <label>Price to Sell *</label>
           <input class="input" type="number" step="0.01" min="0" name="sellingPrice" required value="${p.sellingPrice}" />
         </div>
         <div class="form-group">
-          <label>Stock Quantity *</label>
+          <label>Number of Units Brought *</label>
           <input class="input" type="number" min="0" name="stock" required value="${p.stock}" />
         </div>
         <div class="form-group">
