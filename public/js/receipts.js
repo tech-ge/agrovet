@@ -119,7 +119,7 @@ const Receipts = (() => {
     const root = App.modal.show(`
       <div class="receipt-print" id="receiptPrint">
         <div class="receipt-header">
-          <h2>Tech Agrovet</h2>
+          <h2>Karen Agrovet</h2>
           <p class="muted">Stock Management System</p>
         </div>
         <div class="receipt-meta">
@@ -141,7 +141,7 @@ const Receipts = (() => {
           ${sale.tax ? `<div><span>Tax</span><span>${App.money(sale.tax)}</span></div>` : ''}
           <div class="total"><span>Total</span><span>${App.money(sale.total)}</span></div>
         </div>
-        <p class="receipt-footer">Thank you for your business!</p>
+        <p class="receipt-footer">Thank you for your shopping!</p>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" data-close>Close</button>
