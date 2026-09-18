@@ -8,12 +8,12 @@ const {
   deleteProduct,
   adjustStock,
 } = require('../controllers/productController');
-const { protect } = require('../middleware/auth');
+const { protect, adminOnly } = require('../middleware/auth');
 
 router.use(protect);
 
-router.route('/').get(getProducts).post(createProduct);
-router.route('/:id').get(getProduct).put(updateProduct).delete(deleteProduct);
-router.patch('/:id/stock', adjustStock);
+router.route('/').get(getProducts).post(adminOnly, createProduct);
+router.route('/:id').get(getProduct).put(adminOnly, updateProduct).delete(adminOnly, deleteProduct);
+router.patch('/:id/stock', adminOnly, adjustStock);
 
 module.exports = router;
