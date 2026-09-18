@@ -10,6 +10,18 @@ const app = express();
 
 connectDB().catch((err) => console.error('Database unavailable:', err.message));
 
+const requireDatabase = async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(503).json({
+      success: false,
+      message: 'Database unavailable. Check the MONGODB_URI environment variable and MongoDB network access.',
+    });
+  }
+};
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -34,6 +46,7 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
 }));
 
 // API routes
+app.use('/api', requireDatabase);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/sales', require('./routes/sales'));
