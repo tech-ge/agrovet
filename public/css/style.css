@@ -68,6 +68,7 @@ a:hover { text-decoration: underline; }
   z-index: 50;
   transition: transform 0.25s ease;
 }
+.sidebar-backdrop { display: none; }
 
 .sidebar-brand {
   display: flex;
@@ -456,10 +457,22 @@ a:hover { text-decoration: underline; }
 @media (max-width: 900px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop.visible { display: block; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.35); z-index: 40; }
   .main { margin-left: 0; }
   .menu-toggle { display: inline-flex; }
   .form-grid { grid-template-columns: 1fr; }
   .form-grid .span-2 { grid-column: span 1; }
   .content { padding: 16px; }
   .date-chip { display: none; }
+}
+
+@media (max-width: 600px) {
+  .topbar { height: 56px; padding: 0 12px; }
+  .page-title { font-size: 16px; }
+  .content { padding: 12px; }
+  .card { padding: 12px; margin-bottom: 12px; }
+  .toolbar, .toolbar-left { align-items: stretch; width: 100%; }
+  .toolbar-left .input, .toolbar-left .input-wrap { width: 100%; min-width: 0; }
+  .toolbar > .btn { width: 100%; }
+  .modal { width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; padding: 16px; }
 }
