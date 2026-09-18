@@ -39,7 +39,7 @@ const Sales = (() => {
           <div class="cart-customer">
             <input class="input" id="customerName" placeholder="Customer name (optional)" />
             <input class="input" id="customerPhone" placeholder="Phone (optional)" />
-            <input class="input" type="email" id="customerEmail" placeholder="Customer email (required for Paystack)" />
+            <input class="input" type="email" id="customerEmail" value="geoffreymuthoka200@gmail.com" readonly />
             <select class="input" id="paymentMethod">
               <option value="cash">Cash</option>
               <option value="bank">Bank</option>
@@ -207,13 +207,22 @@ const Sales = (() => {
         customerEmail: document.getElementById('customerEmail').value.trim(),
       };
       if (payload.paymentMethod === 'paystack') {
-        if (!payload.customerEmail) throw new Error('Customer email is required for Paystack');
         const subtotal = cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
         const total = Math.max(subtotal - discount + tax, 0);
-        const payment = await API.post('/payments/initialize', { email: payload.customerEmail, amount: total });
-        window.open(payment.authorizationUrl, '_blank', 'noopener');
-        payload.paymentReference = payment.reference;
-        payload.paymentStatus = 'pending';
+        const payment = await API.post('/payments/initialize', { amount: total });
+        const paymentResult = await new Promise((resolve, reject) => {
+          Paystack.pay({
+            email: 'geoffreymuthoka200@gmail.com',
+            amount: total,
+            key: payment.publicKey,
+            onSuccess: resolve,
+            onCancel: reject,
+          });
+        });
+        await API.get(`/payments/verify/${encodeURIComponent(paymentResult.reference)}`);
+        payload.paymentReference = paymentResult.reference;
+        payload.paymentStatus = 'paid';
+        App.toast('Payment completed. Preparing receipt...');
       }
       const data = await API.post('/sales', payload);
       App.toast(`Sale completed - ${data.sale.receiptNumber}`);
@@ -222,7 +231,9 @@ const Sales = (() => {
       tax = 0;
       await loadProducts();
       renderCart();
-      window.open(`/receipts.html?id=${data.sale._id}`, '_blank');
+      setTimeout(() => {
+        window.location.href = `/receipts.html?id=${data.sale._id}`;
+      }, payload.paymentMethod === 'paystack' ? 900 : 0);
     } catch (err) {
       App.toast(err.message, 'error');
     } finally {
