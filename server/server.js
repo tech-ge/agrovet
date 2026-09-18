@@ -41,7 +41,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/reports', require('./routes/reports'));
 
 app.get('/api/health', (req, res) =>
-  res.json({ status: 'ok', service: 'tech-agrovet', time: new Date() })
+  res.json({ status: 'ok', service: 'karen-agrovet', time: new Date() })
 );
 
 // SPA fallback
@@ -53,5 +53,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
-  console.log(`Tech Agrovet running on http://localhost:${PORT}`)
+  console.log(`Karen Agrovet running on http://localhost:${PORT}`)
 );
