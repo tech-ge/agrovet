@@ -63,6 +63,7 @@
 .cart-item-actions { display: flex; align-items: center; gap: 4px; }
 .sale-quantity { width: 64px; }
 .sale-price { width: 92px; }
+.sale-field-label { display: flex; flex-direction: column; gap: 2px; color: var(--slate-500); font-size: 10px; }
 .qty-btn {
   width: 26px; height: 26px;
   border-radius: 4px;
