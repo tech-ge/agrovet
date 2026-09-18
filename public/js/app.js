@@ -10,8 +10,13 @@ const App = (() => {
   const mount = ({ active, title }) => {
     const user = Auth.user();
     if (!Auth.isLoggedIn()) return (window.location.href = '/login.html');
+    const isAdmin = user?.role === 'admin';
+    if (!isAdmin && !['products', 'sales'].includes(active)) {
+      return (window.location.href = '/products.html');
+    }
 
-    const nav = NAV_ITEMS.map(
+    const visibleNavItems = isAdmin ? NAV_ITEMS : NAV_ITEMS.filter((item) => ['products', 'sales'].includes(item.id));
+    const nav = visibleNavItems.map(
       (item) => `
         <a href="${item.href}" class="nav-link ${item.id === active ? 'active' : ''}">
           <span class="nav-icon" data-icon="${item.icon}" data-size="18"></span>
