@@ -1,4 +1,4 @@
-/* Tech Agrovet — Service Worker
+/* Karen Agrovet — Service Worker
  * Strategy:
  *   - App shell (HTML/CSS/JS/icons): Stale-While-Revalidate
  *   - Static assets (images/fonts): Cache-First
