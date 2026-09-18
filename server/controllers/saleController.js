@@ -15,7 +15,7 @@ exports.createSale = async (req, res, next) => {
       paymentMethod = 'cash',
       paymentStatus = 'paid',
       paymentReference = '',
-      customerName = 'Walk-in Customer',
+      customerName = 'pyhsical Customer',
       customerPhone = '',
       customerEmail = '',
       notes = '',
