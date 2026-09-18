@@ -74,7 +74,7 @@ const Receipts = (() => {
         .map(
           (s) => `
         <tr>
-          <td><strong>${App.escapeHtml(s.receiptNumber)}</strong></td>
+          <td><strong title="Unique verification ID">${App.escapeHtml(s.receiptNumber)}</strong></td>
           <td>${App.fmtDate(s.createdAt)}</td>
           <td>${App.escapeHtml(s.customerName)}</td>
           <td class="text-center">${s.items.reduce((a, i) => a + i.quantity, 0)}</td>
@@ -123,7 +123,7 @@ const Receipts = (() => {
           <p class="muted">Stock Management System</p>
         </div>
         <div class="receipt-meta">
-          <div><strong>Receipt:</strong> ${App.escapeHtml(sale.receiptNumber)}</div>
+          <div><strong>Receipt No. / Verification ID:</strong> ${App.escapeHtml(sale.receiptNumber)}</div>
           <div><strong>Date:</strong> ${App.fmtDate(sale.createdAt)}</div>
           <div><strong>Customer:</strong> ${App.escapeHtml(sale.customerName)}</div>
           ${sale.customerPhone ? `<div><strong>Phone:</strong> ${App.escapeHtml(sale.customerPhone)}</div>` : ''}
