@@ -1,3 +1,20 @@
+.profit-graph {
+  min-height: 230px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 28px 16px 12px;
+  overflow-x: auto;
+  position: relative;
+}
+.graph-zero { position: absolute; left: 16px; right: 16px; bottom: 38px; border-top: 1px dashed var(--slate-300); }
+.graph-column { min-width: 42px; height: 190px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; position: relative; z-index: 1; }
+.graph-column > span { font-size: 10px; color: var(--slate-500); }
+.graph-value { font-size: 10px; white-space: nowrap; transform: rotate(-45deg); transform-origin: center; margin-bottom: 8px; }
+.graph-bar-wrap { height: 110px; width: 18px; display: flex; align-items: flex-end; }
+.graph-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; }
+.graph-bar.profit { background: var(--green-500); }
+.graph-bar.loss { background: var(--red-500); }
 .inventory-report { margin-top: 8px; }
 .inv-stats {
   display: grid;
