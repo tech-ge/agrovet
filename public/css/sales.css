@@ -101,3 +101,14 @@
   margin-bottom: 12px;
 }
 .staff-note { margin: 12px 0 0; text-align: center; }
+
+@media (max-width: 600px) {
+  .pos-products, .pos-cart { padding: 12px; }
+  .product-list { grid-template-columns: 1fr; max-height: none; }
+  .cart-item { align-items: flex-start; flex-direction: column; }
+  .cart-item-info { width: 100%; }
+  .cart-item-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .sale-quantity { width: 70px; }
+  .sale-price { width: 100px; }
+  .cart-summary .summary-row { gap: 10px; }
+}
