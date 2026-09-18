@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login • Tech Agrovet</title>
+  <meta name="theme-color" content="#16a34a" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/auth.css" />
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-icon" data-icon="leaf" data-size="44"></div>
+      <h1>Tech Agrovet</h1>
+      <p>Stock Management System</p>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <h2>Admin Login</h2>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required autocomplete="email" placeholder="admin@agrovet.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required autocomplete="current-password" placeholder="Enter password" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Sign In</button>
+      <p id="error" class="error-text"></p>
+    </form>
+
+    <p class="auth-footer">
+      First time? <a href="/register.html">Set up your account</a>
+    </p>
+  </div>
+
+  <script src="/js/icons.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/sw-register.js"></script>
+  <script>
+    Icons.render();
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const errEl = document.getElementById('error');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      try {
+        await Auth.login(
+          document.getElementById('email').value.trim(),
+          document.getElementById('password').value
+        );
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        errEl.textContent = err.message || 'Login failed';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+/* Dashboard-specific tweaks (mostly relies on global styles) */
+.stat-value { white-space: nowrap; }

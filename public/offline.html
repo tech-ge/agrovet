@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline — Tech Agrovet</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .offline-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: var(--slate-50);
+      text-align: center;
+    }
+    .offline-card {
+      max-width: 420px;
+      background: #fff;
+      padding: 40px 32px;
+      border-radius: 12px;
+      border: 1px solid var(--slate-200);
+      box-shadow: var(--shadow);
+    }
+    .offline-card .icon-svg { width: 64px; height: 64px; color: var(--green-600); margin-bottom: 16px; }
+    .offline-card h1 { font-size: 20px; margin-bottom: 8px; color: var(--slate-800); }
+    .offline-card p { color: var(--slate-500); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="offline-wrap">
+    <div class="offline-card">
+      <span class="icon-svg" data-icon="wifi-off" data-size="64"></span>
+      <h1>You're offline</h1>
+      <p>Your cached data is still available for viewing. Reconnect to sync and record new sales.</p>
+      <button class="btn btn-primary" onclick="location.reload()">Retry connection</button>
+    </div>
+  </div>
+  <script src="/js/icons.js"></script>
+  <script>Icons.render();</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "name": "Tech Agrovet — Stock Management",
+  "short_name": "Tech Agrovet",
+  "description": "Agrovet stock management system with sales, receipts and profit tracking",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Sale",
+      "short_name": "Sale",
+      "url": "/sales.html"
+    },
+    {
+      "name": "Inventory",
+      "short_name": "Stock",
+      "url": "/products.html"
+    }
+  ]
+}
