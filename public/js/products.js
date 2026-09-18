@@ -8,6 +8,7 @@ const Products = (() => {
 
   const render = () => {
     const content = document.getElementById('page-content');
+    const isAdmin = Auth.user()?.role === 'admin';
     content.innerHTML = `
       <div class="toolbar">
         <div class="toolbar-left">
@@ -24,9 +25,9 @@ const Products = (() => {
             Low stock only
           </label>
         </div>
-        <button class="btn btn-primary" id="addProductBtn">
+        ${isAdmin ? `<button class="btn btn-primary" id="addProductBtn">
           <span data-icon="plus" data-size="16"></span> Add Product
-        </button>
+        </button>` : ''}
       </div>
 
       <div class="card">
@@ -42,11 +43,11 @@ const Products = (() => {
                 <th class="text-right">Buying Price</th>
                 <th class="text-right">Selling Price</th>
                 <th class="text-right">Profit Amount</th>
-                <th class="text-right">Actions</th>
+                ${isAdmin ? '<th class="text-right">Actions</th>' : ''}
               </tr>
             </thead>
             <tbody id="productsBody">
-              ${state.products.length ? state.products.map(rowHtml).join('') : '<tr><td colspan="9" class="empty">No products found</td></tr>'}
+              ${state.products.length ? state.products.map(rowHtml).join('') : `<tr><td colspan="${isAdmin ? 9 : 8}" class="empty">No products found</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -73,11 +74,11 @@ const Products = (() => {
         <td class="text-right">${App.money(p.costPrice)}</td>
         <td class="text-right">${App.money(p.sellingPrice)}</td>
         <td class="text-right ${p.profitAmount >= 0 ? 'text-success' : 'text-danger'}">${App.money(p.profitAmount)}</td>
-        <td class="text-right">
+        ${Auth.user()?.role === 'admin' ? `<td class="text-right">
           <button class="btn btn-ghost btn-sm" data-action="adjust" data-id="${p._id}" title="Adjust stock"><span data-icon="refresh" data-size="14"></span></button>
           <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${p._id}" title="Edit"><span data-icon="edit" data-size="14"></span></button>
           <button class="btn btn-ghost btn-sm text-danger" data-action="delete" data-id="${p._id}" title="Delete"><span data-icon="trash" data-size="14"></span></button>
-        </td>
+        </td>` : ''}
       </tr>`;
   };
 
