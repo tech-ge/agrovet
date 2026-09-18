@@ -36,6 +36,7 @@ const saleSchema = new mongoose.Schema(
     paymentReference: { type: String, default: '' },
     customerName: { type: String, default: 'Walk-in Customer' },
     customerPhone: { type: String, default: '' },
+    customerEmail: { type: String, default: '' },
     servedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     notes: { type: String, default: '' },
   },
