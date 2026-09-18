@@ -8,7 +8,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-connectDB();
+connectDB().catch((err) => console.error('Database unavailable:', err.message));
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -51,7 +51,11 @@ app.get(/^\/(?!api|uploads).*/, (req, res) => {
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`Karen Agrovet running on http://localhost:${PORT}`)
-);
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () =>
+    console.log(`Karen Agrovet running on http://localhost:${PORT}`)
+  );
+}
+
+module.exports = app;
