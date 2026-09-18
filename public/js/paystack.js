@@ -7,7 +7,7 @@ const Paystack = (() => {
       key: window.PAYSTACK_PUBLIC_KEY || '',
       email,
       amount: Math.round(amount * 100),
-      currency: 'NGN',
+      currency: 'KES',
       callback: (response) => onSuccess?.(response),
       onClose: () => onCancel?.(new Error('Payment window closed')),
     });
