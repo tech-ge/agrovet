@@ -17,6 +17,7 @@ exports.createSale = async (req, res, next) => {
       paymentReference = '',
       customerName = 'Walk-in Customer',
       customerPhone = '',
+      customerEmail = '',
       notes = '',
     } = req.body;
 
@@ -73,6 +74,7 @@ exports.createSale = async (req, res, next) => {
           paymentReference,
           customerName,
           customerPhone,
+          customerEmail,
           servedBy: req.user?._id,
           notes,
         },
