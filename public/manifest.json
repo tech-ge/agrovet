@@ -1,7 +1,7 @@
 {
-  "name": "Tech Agrovet — Stock Management",
-  "short_name": "Tech Agrovet",
-  "description": "Agrovet stock management system with sales, receipts and profit tracking",
+  "name": "Karen Agrovet",
+  "short_name": "Karen Agrovet",
+  "description": "Agrovet stock management system",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
