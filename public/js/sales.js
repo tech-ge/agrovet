@@ -42,10 +42,8 @@ const Sales = (() => {
             <input class="input" type="email" id="customerEmail" placeholder="Customer email (required for Paystack)" />
             <select class="input" id="paymentMethod">
               <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="transfer">Bank Transfer</option>
+              <option value="bank">Bank</option>
               <option value="paystack">Paystack</option>
-              <option value="credit">Credit</option>
             </select>
           </div>
 
@@ -167,8 +165,12 @@ const Sales = (() => {
             <span class="muted">Buying ${App.money(item.costPrice)} • Profit ${App.money((item.sellingPrice - item.costPrice) * item.quantity)}</span>
           </div>
           <div class="cart-item-actions">
+            <label class="sale-field-label">Items
             <input class="input input-sm sale-quantity" type="number" min="1" max="${item.stock}" value="${item.quantity}" data-field="quantity" data-idx="${idx}" aria-label="Number of items" />
+            </label>
+            <label class="sale-field-label">Sale price
             <input class="input input-sm sale-price" type="number" min="0" step="0.01" value="${item.sellingPrice}" data-field="sellingPrice" data-idx="${idx}" aria-label="Amount to sell" />
+            </label>
             <button class="qty-btn danger" data-action="remove" data-idx="${idx}"><span data-icon="close" data-size="12"></span></button>
           </div>
         </div>`
