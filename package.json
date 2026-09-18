@@ -1,5 +1,5 @@
 {
-  "name": "tech-agrovet",
+  "name": "karen-agrovet",
   "version": "1.0.0",
   "description": "Agrovet stock management system with sales, receipts, and profit tracking",
   "main": "server/server.js",
