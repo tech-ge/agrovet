@@ -24,7 +24,7 @@ const App = (() => {
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
           <span class="brand-icon-sm" data-icon="leaf" data-size="22"></span>
-          <span class="brand-name">Tech Agrovet</span>
+          <span class="brand-name">Karen Agrovet</span>
         </div>
         <nav class="nav">${nav}</nav>
         <div class="sidebar-footer">
