@@ -26,6 +26,7 @@ const App = (() => {
 
     const shell = document.getElementById('app-shell');
     shell.innerHTML = `
+      <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
           <span class="brand-icon-sm" data-icon="leaf" data-size="22"></span>
@@ -48,7 +49,7 @@ const App = (() => {
 
       <div class="main">
         <header class="topbar">
-          <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <button class="menu-toggle" aria-label="Open navigation">
             <span data-icon="menu" data-size="22"></span>
           </button>
           <h1 class="page-title">${title}</h1>
@@ -63,6 +64,18 @@ const App = (() => {
     `;
 
     Icons.render(shell);
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const closeSidebar = () => {
+      sidebar?.classList.remove('open');
+      backdrop?.classList.remove('visible');
+    };
+    document.querySelector('.menu-toggle')?.addEventListener('click', () => {
+      sidebar?.classList.toggle('open');
+      backdrop?.classList.toggle('visible', sidebar?.classList.contains('open'));
+    });
+    backdrop?.addEventListener('click', closeSidebar);
+    document.querySelectorAll('.nav-link').forEach((link) => link.addEventListener('click', closeSidebar));
   };
 
   const toast = (message, type = 'success') => {
