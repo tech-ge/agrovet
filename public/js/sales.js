@@ -5,6 +5,7 @@ const Sales = (() => {
   let tax = 0;
 
   const render = () => {
+    const isAdmin = Auth.user()?.role === 'admin';
     document.getElementById('page-content').innerHTML = `
       <div class="pos-grid">
         <section class="pos-products card">
@@ -47,7 +48,7 @@ const Sales = (() => {
             </select>
           </div>
 
-          <button class="btn btn-primary btn-block" id="checkoutBtn" disabled>Complete Sale</button>
+          ${isAdmin ? '<button class="btn btn-primary btn-block" id="checkoutBtn" disabled>Complete Sale</button>' : '<p class="muted staff-note">Staff can prepare the cart. An administrator must complete the sale.</p>'}
         </section>
       </div>
     `;
@@ -74,7 +75,7 @@ const Sales = (() => {
         renderCart();
       }
     });
-    document.getElementById('checkoutBtn').addEventListener('click', checkout);
+    document.getElementById('checkoutBtn')?.addEventListener('click', checkout);
     document.getElementById('cartItems').addEventListener('change', (e) => {
       const input = e.target.closest('input[data-field]');
       if (!input) return;
@@ -187,7 +188,8 @@ const Sales = (() => {
     document.getElementById('sumSubtotal').textContent = App.money(subtotal);
     document.getElementById('sumTotal').textContent = App.money(Math.max(total, 0));
     document.getElementById('sumProfit').textContent = App.money(profit);
-    document.getElementById('checkoutBtn').disabled = cart.length === 0;
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) checkoutBtn.disabled = cart.length === 0;
   };
 
   const checkout = async () => {
