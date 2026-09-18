@@ -12,6 +12,11 @@ const Reports = (() => {
 
       <div class="stats-grid" id="summaryStats"></div>
 
+      <div class="card">
+        <div class="card-header"><h3>Monthly Profit &amp; Loss</h3></div>
+        <div class="profit-graph" id="profitGraph"></div>
+      </div>
+
       <div class="dashboard-grid">
         <div class="card">
           <div class="card-header"><h3>Top Products</h3></div>
@@ -42,12 +47,21 @@ const Reports = (() => {
 
     document.getElementById('applyBtn').addEventListener('click', load);
     document.getElementById('resetBtn').addEventListener('click', () => {
-      document.getElementById('fromDate').value = '';
-      document.getElementById('toDate').value = '';
+      setCurrentMonth();
       load();
     });
 
+    setCurrentMonth();
     load();
+  };
+
+  const setCurrentMonth = () => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const format = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    document.getElementById('fromDate').value = format(first);
+    document.getElementById('toDate').value = format(last);
   };
 
   const load = async () => {
@@ -73,13 +87,26 @@ const Reports = (() => {
       `;
       Icons.render(document.getElementById('summaryStats'));
 
+      const maxProfit = Math.max(...pl.daily.map((d) => Math.abs(d.profit)), 1);
+      document.getElementById('profitGraph').innerHTML = pl.daily.length
+        ? `<div class="graph-zero"></div>${pl.daily.map((d) => {
+          const height = Math.max((Math.abs(d.profit) / maxProfit) * 100, 3);
+          const loss = d.profit < 0;
+          return `<div class="graph-column" title="${d._id}: ${App.money(d.profit)}">
+            <div class="graph-value ${loss ? 'text-danger' : 'text-success'}">${App.money(d.profit)}</div>
+            <div class="graph-bar-wrap"><div class="graph-bar ${loss ? 'loss' : 'profit'}" style="height:${height}%"></div></div>
+            <span>${d._id.slice(5)}</span>
+          </div>`;
+        }).join('')}`
+        : '<p class="empty">No profit or loss data for this month</p>';
+
       document.getElementById('topProductsBody').innerHTML = pl.topProducts.length
         ? pl.topProducts.map((p) => `
           <tr>
             <td>${App.escapeHtml(p.name)}</td>
             <td class="text-center">${p.quantity}</td>
             <td class="text-right">${App.money(p.revenue)}</td>
-            <td class="text-right text-success">${App.money(p.profit)}</td>
+            <td class="text-right ${p.profit >= 0 ? 'text-success' : 'text-danger'}">${App.money(p.profit)}</td>
           </tr>`).join('')
         : '<tr><td colspan="4" class="empty">No data</td></tr>';
 
@@ -89,7 +116,7 @@ const Reports = (() => {
             <td>${d._id}</td>
             <td class="text-center">${d.salesCount}</td>
             <td class="text-right">${App.money(d.revenue)}</td>
-            <td class="text-right text-success">${App.money(d.profit)}</td>
+            <td class="text-right ${d.profit >= 0 ? 'text-success' : 'text-danger'}">${App.money(d.profit)}</td>
           </tr>`).join('')
         : '<tr><td colspan="4" class="empty">No data</td></tr>';
 
