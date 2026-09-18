@@ -1,10 +1,10 @@
 const Paystack = (() => {
-  const pay = ({ email, amount, onSuccess, onCancel }) => {
+  const pay = ({ email, amount, key, onSuccess, onCancel }) => {
     if (!window.PaystackPop) {
       return onCancel?.(new Error('Paystack not loaded'));
     }
     const handler = window.PaystackPop.setup({
-      key: window.PAYSTACK_PUBLIC_KEY || '',
+      key: key || window.PAYSTACK_PUBLIC_KEY || '',
       email,
       amount: Math.round(amount * 100),
       currency: 'KES',
