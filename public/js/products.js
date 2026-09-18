@@ -34,17 +34,19 @@ const Products = (() => {
           <table class="data-table">
             <thead>
               <tr>
-                <th>Product</th>
+                <th>Name</th>
+                <th>Size</th>
+                <th class="text-center">Qty</th>
+                <th>Unit of Measure</th>
                 <th>Category</th>
-                <th class="text-right">Cost</th>
-                <th class="text-right">Selling</th>
-                <th class="text-right">Profit/Unit</th>
-                <th class="text-center">Stock</th>
+                <th class="text-right">Buying Price</th>
+                <th class="text-right">Selling Price</th>
+                <th class="text-right">Profit Amount</th>
                 <th class="text-right">Actions</th>
               </tr>
             </thead>
             <tbody id="productsBody">
-              ${state.products.length ? state.products.map(rowHtml).join('') : '<tr><td colspan="7" class="empty">No products found</td></tr>'}
+              ${state.products.length ? state.products.map(rowHtml).join('') : '<tr><td colspan="9" class="empty">No products found</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -64,13 +66,13 @@ const Products = (() => {
             <span class="muted">${App.escapeHtml(p.sku || '—')} • per ${App.escapeHtml(p.unit || 'pcs')}</span>
           </div>
         </td>
+        <td>${App.escapeHtml(p.size || '—')}</td>
+        <td class="text-center"><span class="stock-pill ${low ? 'stock-low' : 'stock-ok'}">${p.stock}</span></td>
+        <td>${App.escapeHtml(p.unitOfMeasure || p.unit || 'pcs')}</td>
         <td><span class="badge">${App.escapeHtml(p.category)}</span></td>
         <td class="text-right">${App.money(p.costPrice)}</td>
         <td class="text-right">${App.money(p.sellingPrice)}</td>
-        <td class="text-right ${p.profitPerUnit >= 0 ? 'text-success' : 'text-danger'}">${App.money(p.profitPerUnit)}</td>
-        <td class="text-center">
-          <span class="stock-pill ${low ? 'stock-low' : 'stock-ok'}">${p.stock}</span>
-        </td>
+        <td class="text-right ${p.profitAmount >= 0 ? 'text-success' : 'text-danger'}">${App.money(p.profitAmount)}</td>
         <td class="text-right">
           <button class="btn btn-ghost btn-sm" data-action="adjust" data-id="${p._id}" title="Adjust stock"><span data-icon="refresh" data-size="14"></span></button>
           <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${p._id}" title="Edit"><span data-icon="edit" data-size="14"></span></button>
@@ -134,8 +136,8 @@ const Products = (() => {
   const openForm = (product = null) => {
     const isEdit = !!product;
     const p = product || {
-      name: '', sku: '', category: 'Other', description: '',
-      costPrice: 0, sellingPrice: 0, stock: 0, lowStockThreshold: 5, unit: 'pcs', supplier: '',
+      name: '', size: '', sku: '', category: 'Other', description: '',
+      costPrice: 0, sellingPrice: 0, stock: 0, lowStockThreshold: 5, unit: 'pcs', unitOfMeasure: 'pcs', supplier: '',
     };
 
     App.modal.show(`
@@ -144,6 +146,10 @@ const Products = (() => {
         <div class="form-group span-2">
           <label>Name *</label>
           <input class="input" name="name" required value="${App.escapeHtml(p.name)}" />
+        </div>
+        <div class="form-group">
+          <label>Size</label>
+          <input class="input" name="size" value="${App.escapeHtml(p.size || '')}" placeholder="e.g. 1kg, 500ml" />
         </div>
         <div class="form-group">
           <label>SKU</label>
@@ -156,8 +162,8 @@ const Products = (() => {
           </select>
         </div>
         <div class="form-group">
-          <label>Unit</label>
-          <input class="input" name="unit" value="${App.escapeHtml(p.unit || 'pcs')}" />
+          <label>Unit of Measure *</label>
+          <input class="input" name="unitOfMeasure" required value="${App.escapeHtml(p.unitOfMeasure || p.unit || 'pcs')}" />
         </div>
         <div class="form-group">
           <label>Supplier</label>
@@ -168,11 +174,11 @@ const Products = (() => {
           <input class="input" type="number" step="0.01" min="0" name="costPrice" required value="${p.costPrice}" />
         </div>
         <div class="form-group">
-          <label>Price to Sell *</label>
+          <label>Selling Price *</label>
           <input class="input" type="number" step="0.01" min="0" name="sellingPrice" required value="${p.sellingPrice}" />
         </div>
         <div class="form-group">
-          <label>Number of Units Brought *</label>
+          <label>Quantity *</label>
           <input class="input" type="number" min="0" name="stock" required value="${p.stock}" />
         </div>
         <div class="form-group">
@@ -194,9 +200,11 @@ const Products = (() => {
       const fd = new FormData(document.getElementById('productForm'));
       const payload = {
         name: fd.get('name').trim(),
+        size: fd.get('size').trim(),
         sku: fd.get('sku').trim(),
         category: fd.get('category'),
-        unit: fd.get('unit').trim(),
+        unit: fd.get('unitOfMeasure').trim(),
+        unitOfMeasure: fd.get('unitOfMeasure').trim(),
         supplier: fd.get('supplier').trim(),
         costPrice: Number(fd.get('costPrice')),
         sellingPrice: Number(fd.get('sellingPrice')),
