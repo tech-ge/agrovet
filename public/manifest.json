@@ -1,7 +1,8 @@
 {
-  "name": "Karen Agrovet",
+  "name": "Karen Agrovet - Stock Management",
   "short_name": "Karen Agrovet",
-  "description": "Agrovet stock management system",
+  "description": "Agrovet stock management system with sales, receipts and profit tracking",
+  "id": "/",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
@@ -14,13 +15,13 @@
       "src": "/assets/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/assets/icons/icon.svg",
