@@ -35,12 +35,6 @@ exports.createRequest = async (req, res, next) => {
 
     const products = await Product.find({ _id: { $in: [...quantities.keys()] }, isActive: true });
     if (products.length !== quantities.size) return res.status(400).json({ success: false, message: 'A product is no longer available' });
-    for (const product of products) {
-      if (product.stock < quantities.get(String(product._id))) {
-        return res.status(400).json({ success: false, message: `${product.name} does not have enough stock` });
-      }
-    }
-
     const request = await SaleRequest.create({
       customer: req.user._id,
       customerName: req.user.name,

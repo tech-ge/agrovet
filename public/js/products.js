@@ -112,7 +112,7 @@ const Products = (() => {
     list.innerHTML = products.length ? products.map((product) => `
       <article class="customer-product">
         <div><strong>${App.escapeHtml(product.name)}</strong><span class="muted">${App.escapeHtml(product.category)} - ${App.escapeHtml(product.unitOfMeasure || product.unit || 'pcs')}</span></div>
-        <div class="customer-product-buy"><span class="stock-pill ${product.stock > 0 ? 'stock-ok' : 'stock-low'}">${product.stock} available</span><strong>${App.money(product.sellingPrice)}</strong><button class="btn btn-primary btn-sm" data-add-product="${product._id}" ${product.stock < 1 ? 'disabled' : ''}>Add</button></div>
+        <div class="customer-product-buy"><strong>${App.money(product.sellingPrice)}</strong><button class="btn btn-primary btn-sm" data-add-product="${product._id}">Add</button></div>
       </article>`).join('') : '<p class="empty">No products found</p>';
   };
 
@@ -121,10 +121,9 @@ const Products = (() => {
     if (!product) return;
     const item = state.cart.find((entry) => entry.product === id);
     if (item) {
-      if (item.quantity >= product.stock) return App.toast('Not enough stock available', 'error');
       item.quantity += 1;
     } else {
-      state.cart.push({ product: id, name: product.name, quantity: 1, sellingPrice: product.sellingPrice, stock: product.stock });
+      state.cart.push({ product: id, name: product.name, quantity: 1, sellingPrice: product.sellingPrice });
     }
     renderCustomerCart();
   };
@@ -135,7 +134,7 @@ const Products = (() => {
     list.innerHTML = state.cart.length ? state.cart.map((item) => `
       <div class="customer-cart-row">
         <div><strong>${App.escapeHtml(item.name)}</strong><span class="muted">${App.money(item.sellingPrice)} each</span></div>
-        <div class="customer-cart-controls"><button class="qty-btn" data-cart-action="decrease" data-product="${item.product}" aria-label="Decrease quantity">-</button><span>${item.quantity}</span><button class="qty-btn" data-cart-action="increase" data-product="${item.product}" aria-label="Increase quantity" ${item.quantity >= item.stock ? 'disabled' : ''}>+</button><button class="qty-btn danger" data-cart-action="remove" data-product="${item.product}" aria-label="Remove item">x</button></div>
+        <div class="customer-cart-controls"><button class="qty-btn" data-cart-action="decrease" data-product="${item.product}" aria-label="Decrease quantity">-</button><span>${item.quantity}</span><button class="qty-btn" data-cart-action="increase" data-product="${item.product}" aria-label="Increase quantity">+</button><button class="qty-btn danger" data-cart-action="remove" data-product="${item.product}" aria-label="Remove item">x</button></div>
       </div>`).join('') : '<p class="empty">Choose products to start a request.</p>';
     const total = state.cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
     document.getElementById('requestTotal').textContent = App.money(total);

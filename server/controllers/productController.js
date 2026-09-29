@@ -9,6 +9,11 @@ const formatProduct = (product, role) => {
     delete result.profitPerUnit;
     delete result.profitAmount;
   }
+  if (role === 'user') {
+    delete result.stock;
+    delete result.lowStockThreshold;
+    delete result.isLowStock;
+  }
   return result;
 };
 
