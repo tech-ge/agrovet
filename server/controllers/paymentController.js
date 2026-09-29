@@ -2,26 +2,17 @@ const { paystackRequest } = require('../config/paystack');
 
 exports.initializePayment = async (req, res, next) => {
   try {
-    const { amount } = req.body;
-    const email = 'geoffreymuthoka200@gmail.com';
+    const { amount, email } = req.body;
     const numericAmount = Number(amount);
-    if (!email || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+    if (!email || !/^\S+@\S+\.\S+$/.test(email) || !Number.isFinite(numericAmount) || numericAmount <= 0) {
       return res.status(400).json({ success: false, message: 'A valid email and amount are required' });
     }
 
-    const response = await paystackRequest('/transaction/initialize', 'POST', {
-      email,
-      amount: Math.round(numericAmount * 100),
-      currency: 'KES',
-    });
-    if (!response.status || !response.data?.authorization_url) {
-      return res.status(502).json({ success: false, message: response.message || 'Paystack could not initialize payment' });
-    }
+    const publicKey = process.env.PAYSTACK_PUBLIC_KEY;
+    if (!publicKey) return res.status(503).json({ success: false, message: 'Paystack is not configured' });
     res.json({
       success: true,
-      publicKey: process.env.PAYSTACK_PUBLIC_KEY || '',
-      authorizationUrl: response.data.authorization_url,
-      reference: response.data.reference,
+      publicKey,
     });
   } catch (err) {
     next(err);

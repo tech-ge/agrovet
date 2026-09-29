@@ -101,6 +101,7 @@
   margin-bottom: 12px;
 }
 .staff-note { margin: 12px 0 0; text-align: center; }
+.staff-sales-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
 
 @media (max-width: 600px) {
   .pos-products, .pos-cart { padding: 12px; }

@@ -5,8 +5,11 @@ const Sales = (() => {
   let tax = 0;
 
   const render = () => {
-    const isAdmin = Auth.user()?.role === 'admin';
-    document.getElementById('page-content').innerHTML = `
+    const role = Auth.user()?.role;
+    const isAdmin = role === 'admin';
+    const isStaff = role === 'staff';
+    const content = document.getElementById(isStaff ? 'staffSaleView' : 'page-content');
+    content.innerHTML = `
       <div class="pos-grid">
         <section class="pos-products card">
           <div class="pos-search input-wrap">
@@ -29,18 +32,18 @@ const Sales = (() => {
               <span>Discount</span>
               <input class="input input-sm" type="number" min="0" step="0.01" id="discountInput" value="0" />
             </div>
-            <div class="summary-row">
+            ${isAdmin ? `<div class="summary-row">
               <span>Tax</span>
               <input class="input input-sm" type="number" min="0" step="0.01" id="taxInput" value="0" />
-            </div>
+            </div>` : ''}
             <div class="summary-row total"><span>Total</span><span id="sumTotal">KES 0.00</span></div>
-            <div class="summary-row profit"><span>Profit</span><span id="sumProfit">KES 0.00</span></div>
+            ${isAdmin ? '<div class="summary-row profit"><span>Profit</span><span id="sumProfit">KES 0.00</span></div>' : ''}
           </div>
 
           <div class="cart-customer">
             <input class="input" id="customerName" placeholder="Customer name (optional)" />
             <input class="input" id="customerPhone" placeholder="Phone (optional)" />
-            <input class="input" type="email" id="customerEmail" value="geoffreymuthoka200@gmail.com" readonly />
+            <input class="input" type="email" id="customerEmail" placeholder="Email for Paystack payment" />
             <select class="input" id="paymentMethod">
               <option value="cash">Cash</option>
               <option value="bank">Bank</option>
@@ -48,7 +51,7 @@ const Sales = (() => {
             </select>
           </div>
 
-          ${isAdmin ? '<button class="btn btn-primary btn-block" id="checkoutBtn" disabled>Complete Sale</button>' : '<p class="muted staff-note">Staff can prepare the cart. An administrator must complete the sale.</p>'}
+          ${(isAdmin || isStaff) ? '<button class="btn btn-primary btn-block" id="checkoutBtn" disabled>Complete Sale</button>' : ''}
         </section>
       </div>
     `;
@@ -65,7 +68,7 @@ const Sales = (() => {
       discount = Number(e.target.value) || 0;
       renderCart();
     });
-    document.getElementById('taxInput').addEventListener('input', (e) => {
+    document.getElementById('taxInput')?.addEventListener('input', (e) => {
       tax = Number(e.target.value) || 0;
       renderCart();
     });
@@ -163,15 +166,15 @@ const Sales = (() => {
         <div class="cart-item">
           <div class="cart-item-info">
             <strong>${App.escapeHtml(item.name)}</strong>
-            <span class="muted">Buying ${App.money(item.costPrice)} • Profit ${App.money((item.sellingPrice - item.costPrice) * item.quantity)}</span>
+            ${Auth.user()?.role === 'admin' ? `<span class="muted">Buying ${App.money(item.costPrice)} • Profit ${App.money((item.sellingPrice - item.costPrice) * item.quantity)}</span>` : ''}
           </div>
           <div class="cart-item-actions">
             <label class="sale-field-label">Items
             <input class="input input-sm sale-quantity" type="number" min="1" max="${item.stock}" value="${item.quantity}" data-field="quantity" data-idx="${idx}" aria-label="Number of items" />
             </label>
-            <label class="sale-field-label">Sale price
+            ${Auth.user()?.role === 'admin' ? `<label class="sale-field-label">Sale price
             <input class="input input-sm sale-price" type="number" min="0" step="0.01" value="${item.sellingPrice}" data-field="sellingPrice" data-idx="${idx}" aria-label="Amount to sell" />
-            </label>
+            </label>` : `<span class="sale-field-label">Price ${App.money(item.sellingPrice)}</span>`}
             <button class="qty-btn danger" data-action="remove" data-idx="${idx}"><span data-icon="close" data-size="12"></span></button>
           </div>
         </div>`
@@ -181,13 +184,15 @@ const Sales = (() => {
     }
 
     const subtotal = cart.reduce((s, i) => s + i.sellingPrice * i.quantity, 0);
-    const cost = cart.reduce((s, i) => s + i.costPrice * i.quantity, 0);
+    const isAdmin = Auth.user()?.role === 'admin';
+    const cost = isAdmin ? cart.reduce((s, i) => s + i.costPrice * i.quantity, 0) : 0;
     const profit = subtotal - cost - discount;
-    const total = subtotal - discount + tax;
+    const total = subtotal - discount + (isAdmin ? tax : 0);
 
     document.getElementById('sumSubtotal').textContent = App.money(subtotal);
     document.getElementById('sumTotal').textContent = App.money(Math.max(total, 0));
-    document.getElementById('sumProfit').textContent = App.money(profit);
+    const profitEl = document.getElementById('sumProfit');
+    if (profitEl) profitEl.textContent = App.money(profit);
     const checkoutBtn = document.getElementById('checkoutBtn');
     if (checkoutBtn) checkoutBtn.disabled = cart.length === 0;
   };
@@ -201,7 +206,7 @@ const Sales = (() => {
       const payload = {
         items: cart.map((i) => ({ product: i.product, quantity: i.quantity })),
         discount,
-        tax,
+        tax: Auth.user()?.role === 'staff' ? 0 : tax,
         paymentMethod: document.getElementById('paymentMethod').value,
         paymentStatus: 'paid',
         customerName: document.getElementById('customerName').value.trim() || 'Walk-in Customer',
@@ -210,11 +215,14 @@ const Sales = (() => {
       };
       if (payload.paymentMethod === 'paystack') {
         const subtotal = cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
-        const total = Math.max(subtotal - discount + tax, 0);
-        const payment = await API.post('/payments/initialize', { amount: total });
+        const saleTax = Auth.user()?.role === 'staff' ? 0 : tax;
+        const total = Math.max(subtotal - discount + saleTax, 0);
+        const email = payload.customerEmail;
+        if (!email) throw new Error('Enter the customer email for Paystack');
+        const payment = await API.post('/payments/initialize', { amount: total, email });
         const paymentResult = await new Promise((resolve, reject) => {
           Paystack.pay({
-            email: 'geoffreymuthoka200@gmail.com',
+            email,
             amount: total,
             key: payment.publicKey,
             onSuccess: resolve,
@@ -232,6 +240,7 @@ const Sales = (() => {
       discount = 0;
       tax = 0;
       await loadProducts();
+      renderProductList();
       renderCart();
       setTimeout(() => {
         window.location.href = `/receipts.html?id=${data.sale._id}`;
@@ -250,7 +259,7 @@ const Sales = (() => {
   };
 
   const initStaffRequests = () => {
-    const content = document.getElementById('page-content');
+    const content = document.getElementById('staffSaleView');
     content.innerHTML = `
       <div class="toolbar"><div class="toolbar-left"><select class="input" id="requestStatus"><option value="pending">Pending requests</option><option value="fulfilled">Fulfilled</option><option value="rejected">Declined</option><option value="">All requests</option></select></div></div>
       <div class="card"><div class="table-wrapper"><table class="data-table"><thead><tr><th>Request</th><th>Customer</th><th>Items</th><th class="text-right">Estimated total</th><th>Date</th><th>Status</th><th class="text-right">Actions</th></tr></thead><tbody id="requestsBody"><tr><td colspan="7" class="empty">Loading requests...</td></tr></tbody></table></div></div>
@@ -334,7 +343,27 @@ const Sales = (() => {
   };
 
   const init = async () => {
-    if (Auth.user()?.role === 'staff') return initStaffRequests();
+    if (Auth.user()?.role === 'staff') {
+      const content = document.getElementById('page-content');
+      content.innerHTML = `
+        <div class="staff-sales-tabs" role="tablist" aria-label="Sales workspace">
+          <button class="btn btn-primary" type="button" data-staff-view="sale" role="tab" aria-selected="true">Walk-in Sale</button>
+          <button class="btn btn-ghost" type="button" data-staff-view="requests" role="tab" aria-selected="false">Customer Requests</button>
+        </div>
+        <div id="staffSaleView"></div>
+      `;
+      content.querySelectorAll('[data-staff-view]').forEach((button) => button.addEventListener('click', () => {
+        const showSale = button.dataset.staffView === 'sale';
+        content.querySelectorAll('[data-staff-view]').forEach((tab) => {
+          const selected = tab === button;
+          tab.classList.toggle('btn-primary', selected);
+          tab.classList.toggle('btn-ghost', !selected);
+          tab.setAttribute('aria-selected', String(selected));
+        });
+        if (showSale) render();
+        else initStaffRequests();
+      }));
+    }
     render();
     try {
       await loadProducts();

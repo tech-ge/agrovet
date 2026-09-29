@@ -3,6 +3,7 @@ const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 const { calculateSaleTotals } = require('../utils/calculateProfit');
 const { generateReceiptNumber } = require('../utils/generateReceipt');
+const { paystackRequest } = require('../config/paystack');
 
 const formatSale = (sale, role) => {
   const result = sale.toObject();
@@ -43,6 +44,7 @@ exports.createSale = async (req, res, next) => {
       await session.abortTransaction();
       return res.status(400).json({ success: false, message: 'Payment method must be cash, bank, or paystack' });
     }
+    const isStaff = req.user?.role === 'staff';
 
     const productIds = items.map((i) => i.product);
     const products = await Product.find({ _id: { $in: productIds }, isActive: true }).session(session);
@@ -59,11 +61,32 @@ exports.createSale = async (req, res, next) => {
         name: product.name,
         quantity: item.quantity,
         costPrice: product.costPrice,
-        sellingPrice: item.sellingPrice ?? product.sellingPrice,
+        sellingPrice: isStaff ? product.sellingPrice : item.sellingPrice ?? product.sellingPrice,
       };
     });
 
-    const totals = calculateSaleTotals(verifiedItems, { discount, tax });
+    const totals = calculateSaleTotals(verifiedItems, { discount, tax: isStaff ? 0 : tax });
+    if (Number(discount) > totals.subtotal) {
+      throw Object.assign(new Error('Discount cannot exceed the subtotal'), { statusCode: 400 });
+    }
+
+    if (paymentMethod === 'paystack') {
+      if (!paymentReference) throw Object.assign(new Error('Paystack payment reference is required'), { statusCode: 400 });
+      if (!customerEmail) throw Object.assign(new Error('Customer email is required for Paystack payment'), { statusCode: 400 });
+      const existingPayment = await Sale.exists({ paymentReference }).session(session);
+      if (existingPayment) throw Object.assign(new Error('Paystack payment has already been used'), { statusCode: 400 });
+      const verification = await paystackRequest(`/transaction/verify/${encodeURIComponent(paymentReference)}`);
+      const payment = verification.data;
+      if (!verification.status || payment?.status !== 'success') {
+        throw Object.assign(new Error('Paystack payment was not successful'), { statusCode: 400 });
+      }
+      if (payment.currency !== 'KES' || payment.amount !== Math.round(totals.total * 100)) {
+        throw Object.assign(new Error('Paystack payment amount does not match this sale'), { statusCode: 400 });
+      }
+      if (customerEmail && payment.customer?.email?.toLowerCase() !== customerEmail.toLowerCase()) {
+        throw Object.assign(new Error('Paystack customer email does not match this sale'), { statusCode: 400 });
+      }
+    }
 
     for (const item of totals.items) {
       const result = await Product.updateOne(
@@ -83,12 +106,12 @@ exports.createSale = async (req, res, next) => {
           items: totals.items,
           subtotal: totals.subtotal,
           discount: Number(discount),
-          tax: Number(tax),
+          tax: isStaff ? 0 : Number(tax),
           total: totals.total,
           totalCost: totals.totalCost,
           totalProfit: totals.totalProfit,
           paymentMethod,
-          paymentStatus,
+          paymentStatus: isStaff || paymentMethod === 'paystack' ? 'paid' : paymentStatus,
           paymentReference,
           customerName,
           customerPhone,
@@ -101,7 +124,7 @@ exports.createSale = async (req, res, next) => {
     );
 
     await session.commitTransaction();
-    res.status(201).json({ success: true, sale });
+    res.status(201).json({ success: true, sale: formatSale(sale, req.user.role) });
   } catch (err) {
     await session.abortTransaction();
     next(err);

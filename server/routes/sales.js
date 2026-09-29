@@ -5,7 +5,7 @@ const { protect, adminOnly, allowRoles } = require('../middleware/auth');
 
 router.use(protect);
 
-router.route('/').get(allowRoles('admin', 'staff', 'user'), getSales).post(adminOnly, createSale);
+router.route('/').get(allowRoles('admin', 'staff', 'user'), getSales).post(allowRoles('admin', 'staff'), createSale);
 router.get('/:id', getSale);
 router.post('/:id/refund', adminOnly, refundSale);
 

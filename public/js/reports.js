@@ -70,9 +70,9 @@ const Reports = (() => {
     try {
       const data = await API.get('/reports/staff-summary');
       const cards = [
-        { label: "Today's Sales", value: App.money(data.today.revenue), detail: `${data.today.itemsSold} items`, cls: 'stat-green' },
-        { label: 'This Week', value: App.money(data.week.revenue), detail: `${data.week.itemsSold} items`, cls: 'stat-blue' },
-        { label: 'This Month', value: App.money(data.month.revenue), detail: `${data.month.itemsSold} items`, cls: 'stat-teal' },
+        { label: "Amount Sold Today", value: App.money(data.today.revenue), detail: `${data.today.itemsSold} items sold`, cls: 'stat-green' },
+        { label: 'Amount Sold This Week', value: App.money(data.week.revenue), detail: `${data.week.itemsSold} items sold`, cls: 'stat-blue' },
+        { label: 'Amount Sold This Month', value: App.money(data.month.revenue), detail: `${data.month.itemsSold} items sold`, cls: 'stat-teal' },
         { label: 'Available Stock Value', value: App.money(data.inventory.availableRetailValue), detail: `${data.inventory.unitsAvailable} units at selling price`, cls: 'stat-amber' },
       ];
       document.getElementById('staffSummaryStats').innerHTML = cards.map((card) => `
