@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     password: { type: String, required: true, minlength: 6, select: false },
-    role: { type: String, enum: ['admin', 'staff'], default: 'admin' },
+    role: { type: String, enum: ['admin', 'staff', 'user'], default: 'user' },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

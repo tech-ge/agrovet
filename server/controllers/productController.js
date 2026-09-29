@@ -1,4 +1,16 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const StockPurchase = require('../models/StockPurchase');
+
+const formatProduct = (product, role) => {
+  const result = product.toObject({ virtuals: true });
+  if (role !== 'admin') {
+    delete result.costPrice;
+    delete result.profitPerUnit;
+    delete result.profitAmount;
+  }
+  return result;
+};
 
 exports.getProducts = async (req, res, next) => {
   try {
@@ -19,7 +31,7 @@ exports.getProducts = async (req, res, next) => {
       products = products.filter((p) => p.stock <= p.lowStockThreshold);
     }
 
-    res.json({ success: true, count: products.length, products });
+    res.json({ success: true, count: products.length, products: products.map((product) => formatProduct(product, req.user.role)) });
   } catch (err) {
     next(err);
   }
@@ -29,24 +41,46 @@ exports.getProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
-    res.json({ success: true, product });
+    res.json({ success: true, product: formatProduct(product, req.user.role) });
   } catch (err) {
     next(err);
   }
 };
 
 exports.createProduct = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const product = await Product.create(req.body);
+    const [product] = await Product.create([req.body], { session });
+    if (product.stock > 0) {
+      await StockPurchase.create([{
+        product: product._id,
+        productName: product.name,
+        quantity: product.stock,
+        totalCost: product.stock * product.costPrice,
+        unitCost: product.costPrice,
+        supplier: product.supplier,
+        receivedBy: req.user._id,
+        notes: 'Initial stock recorded at product creation',
+      }], { session });
+    }
+    await session.commitTransaction();
     res.status(201).json({ success: true, product });
   } catch (err) {
+    await session.abortTransaction();
     next(err);
+  } finally {
+    session.endSession();
   }
 };
 
 exports.updateProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const editableFields = ['name', 'sku', 'size', 'category', 'description', 'sellingPrice', 'lowStockThreshold', 'unit', 'unitOfMeasure', 'supplier'];
+    const updates = Object.fromEntries(editableFields
+      .filter((field) => req.body[field] !== undefined)
+      .map((field) => [field, req.body[field]]));
+    const product = await Product.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
     });

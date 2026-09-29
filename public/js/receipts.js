@@ -1,5 +1,7 @@
 const Receipts = (() => {
   const render = () => {
+    const isAdmin = Auth.user()?.role === 'admin';
+    const columnCount = isAdmin ? 8 : 7;
     document.getElementById('page-content').innerHTML = `
       <div class="toolbar">
         <div class="toolbar-left">
@@ -21,12 +23,12 @@ const Receipts = (() => {
                 <th>Customer</th>
                 <th class="text-center">Items</th>
                 <th class="text-right">Total</th>
-                <th class="text-right">Profit</th>
+                ${isAdmin ? '<th class="text-right">Profit</th>' : ''}
                 <th>Payment</th>
                 <th class="text-right">Actions</th>
               </tr>
             </thead>
-            <tbody id="receiptsBody"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody>
+            <tbody id="receiptsBody"><tr><td colspan="${columnCount}" class="empty">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -67,7 +69,7 @@ const Receipts = (() => {
       const data = await API.get('/sales?' + params.toString());
       const body = document.getElementById('receiptsBody');
       if (!data.sales.length) {
-        body.innerHTML = '<tr><td colspan="8" class="empty">No receipts found</td></tr>';
+        body.innerHTML = `<tr><td colspan="${Auth.user()?.role === 'admin' ? 8 : 7}" class="empty">No receipts found</td></tr>`;
         return;
       }
       body.innerHTML = data.sales
@@ -79,11 +81,11 @@ const Receipts = (() => {
           <td>${App.escapeHtml(s.customerName)}</td>
           <td class="text-center">${s.items.reduce((a, i) => a + i.quantity, 0)}</td>
           <td class="text-right"><strong>${App.money(s.total)}</strong></td>
-          <td class="text-right ${s.totalProfit >= 0 ? 'text-success' : 'text-danger'}">${App.money(s.totalProfit)}</td>
+          ${Auth.user()?.role === 'admin' ? `<td class="text-right ${s.totalProfit >= 0 ? 'text-success' : 'text-danger'}">${App.money(s.totalProfit)}</td>` : ''}
           <td><span class="badge badge-${s.paymentStatus}">${s.paymentMethod} • ${s.paymentStatus}</span></td>
           <td class="text-right">
             <button class="btn btn-ghost btn-sm" data-action="view" data-id="${s._id}" title="View"><span data-icon="receipt" data-size="14"></span></button>
-            ${s.paymentStatus === 'paid' ? `<button class="btn btn-ghost btn-sm text-danger" data-action="refund" data-id="${s._id}" title="Refund"><span data-icon="refresh" data-size="14"></span></button>` : ''}
+            ${Auth.user()?.role === 'admin' && s.paymentStatus === 'paid' ? `<button class="btn btn-ghost btn-sm text-danger" data-action="refund" data-id="${s._id}" title="Refund"><span data-icon="refresh" data-size="14"></span></button>` : ''}
           </td>
         </tr>`
         )

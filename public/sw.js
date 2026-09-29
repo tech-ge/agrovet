@@ -7,7 +7,7 @@
  *   - Navigation requests: Network-First falling back to cached shell
  */
 
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.3.0';
 const SHELL_CACHE = `agrovet-shell-${VERSION}`;
 const ASSETS_CACHE = `agrovet-assets-${VERSION}`;
 const API_CACHE = `agrovet-api-${VERSION}`;
@@ -23,6 +23,8 @@ const SHELL_FILES = [
   '/sales.html',
   '/receipts.html',
   '/reports.html',
+  '/purchases.html',
+  '/users.html',
   '/offline.html',
   '/manifest.json',
   '/css/style.css',
@@ -43,6 +45,8 @@ const SHELL_FILES = [
   '/js/paystack.js',
   '/js/receipts.js',
   '/js/reports.js',
+  '/js/purchases.js',
+  '/js/users.js',
 ];
 
 // ---------- Install ----------
@@ -93,6 +97,12 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/')) {
     // Never cache mutations
     if (request.method !== 'GET') return;
+
+    // Authenticated responses contain role-specific data and must not cross sessions.
+    if (request.headers.has('Authorization')) {
+      event.respondWith(fetch(request));
+      return;
+    }
 
     event.respondWith(networkFirst(request, API_CACHE, 5000));
     return;

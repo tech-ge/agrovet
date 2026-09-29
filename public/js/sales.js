@@ -249,7 +249,92 @@ const Sales = (() => {
     products = data.products;
   };
 
+  const initStaffRequests = () => {
+    const content = document.getElementById('page-content');
+    content.innerHTML = `
+      <div class="toolbar"><div class="toolbar-left"><select class="input" id="requestStatus"><option value="pending">Pending requests</option><option value="fulfilled">Fulfilled</option><option value="rejected">Declined</option><option value="">All requests</option></select></div></div>
+      <div class="card"><div class="table-wrapper"><table class="data-table"><thead><tr><th>Request</th><th>Customer</th><th>Items</th><th class="text-right">Estimated total</th><th>Date</th><th>Status</th><th class="text-right">Actions</th></tr></thead><tbody id="requestsBody"><tr><td colspan="7" class="empty">Loading requests...</td></tr></tbody></table></div></div>
+    `;
+    document.getElementById('requestStatus').addEventListener('change', loadStaffRequests);
+    document.getElementById('requestsBody').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const request = staffRequests.find((entry) => entry._id === button.dataset.id);
+      if (!request) return;
+      if (button.dataset.action === 'fulfill') openFulfillRequest(request);
+      if (button.dataset.action === 'reject') rejectCustomerRequest(request._id);
+    });
+    loadStaffRequests();
+  };
+
+  let staffRequests = [];
+
+  const loadStaffRequests = async () => {
+    try {
+      const status = document.getElementById('requestStatus').value;
+      const query = status ? `?status=${encodeURIComponent(status)}` : '';
+      const data = await API.get('/requests' + query);
+      staffRequests = data.requests;
+      const body = document.getElementById('requestsBody');
+      if (!body) return;
+      body.innerHTML = staffRequests.length ? staffRequests.map((request) => {
+        const itemCount = request.items.reduce((sum, item) => sum + item.quantity, 0);
+        const estimated = request.items.reduce((sum, item) => sum + item.quantity * item.sellingPrice, 0);
+        const actions = request.status === 'pending' ? `
+          <button class="btn btn-primary btn-sm" data-action="fulfill" data-id="${request._id}">Process</button>
+          <button class="btn btn-ghost btn-sm text-danger" data-action="reject" data-id="${request._id}" title="Decline request"><span data-icon="close" data-size="14"></span></button>` : '—';
+        return `<tr><td><strong>${App.escapeHtml(request._id.slice(-8).toUpperCase())}</strong></td><td>${App.escapeHtml(request.customerName)}<br><span class="muted">${App.escapeHtml(request.customerEmail)}</span></td><td>${request.items.map((item) => `${App.escapeHtml(item.name)} x ${item.quantity}`).join('<br>')}<br><span class="muted">${itemCount} items</span></td><td class="text-right">${App.money(estimated)}</td><td>${App.fmtDate(request.createdAt)}</td><td><span class="badge">${App.escapeHtml(request.status)}</span></td><td class="text-right">${actions}</td></tr>`;
+      }).join('') : '<tr><td colspan="7" class="empty">No requests to show</td></tr>';
+      Icons.render(body);
+    } catch (err) {
+      App.toast(err.message, 'error');
+    }
+  };
+
+  const openFulfillRequest = (request) => {
+    const subtotal = request.items.reduce((sum, item) => sum + item.quantity * item.sellingPrice, 0);
+    App.modal.show(`
+      <h3>Process Customer Request</h3>
+      <p><strong>${App.escapeHtml(request.customerName)}</strong> - ${request.items.map((item) => `${App.escapeHtml(item.name)} x ${item.quantity}`).join(', ')}</p>
+      <p class="muted">Estimated subtotal: ${App.money(subtotal)}. Selling prices are fixed by the admin.</p>
+      <form id="fulfillRequestForm" class="form-grid">
+        <div class="form-group"><label>Discount amount</label><input class="input" type="number" name="discount" min="0" max="${subtotal}" step="0.01" value="0" required /></div>
+        <div class="form-group"><label>Payment method</label><select class="input" name="paymentMethod"><option value="cash">Cash</option><option value="bank">Bank</option></select></div>
+      </form>
+      <p class="muted">No tax will be added. Stock is checked again when you process the request.</p>
+      <div class="modal-actions"><button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-primary" id="confirmFulfill">Complete Sale</button></div>
+    `);
+    document.getElementById('confirmFulfill').addEventListener('click', async () => {
+      const form = document.getElementById('fulfillRequestForm');
+      if (!form.reportValidity()) return;
+      const fields = new FormData(form);
+      try {
+        const result = await API.post(`/requests/${request._id}/fulfill`, {
+          discount: Number(fields.get('discount')),
+          paymentMethod: fields.get('paymentMethod'),
+        });
+        App.modal.hide();
+        App.toast(`Sale completed - ${result.sale.receiptNumber}`);
+        loadStaffRequests();
+      } catch (err) {
+        App.toast(err.message, 'error');
+      }
+    });
+  };
+
+  const rejectCustomerRequest = async (id) => {
+    if (!App.confirmDialog('Decline this customer request?')) return;
+    try {
+      await API.post(`/requests/${id}/reject`, {});
+      App.toast('Request declined');
+      loadStaffRequests();
+    } catch (err) {
+      App.toast(err.message, 'error');
+    }
+  };
+
   const init = async () => {
+    if (Auth.user()?.role === 'staff') return initStaffRequests();
     render();
     try {
       await loadProducts();

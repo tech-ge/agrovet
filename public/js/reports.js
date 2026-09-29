@@ -1,5 +1,6 @@
 const Reports = (() => {
   const render = () => {
+    if (Auth.user()?.role === 'staff') return renderStaff();
     document.getElementById('page-content').innerHTML = `
       <div class="toolbar">
         <div class="toolbar-left">
@@ -53,6 +54,34 @@ const Reports = (() => {
 
     setCurrentMonth();
     load();
+  };
+
+  const renderStaff = () => {
+    document.getElementById('page-content').innerHTML = `
+      <div class="stats-grid" id="staffSummaryStats"></div>
+      <div class="card"><div class="card-header"><h3>Daily Sales</h3><span class="muted">Last 30 days</span></div>
+        <div class="table-wrapper"><table class="data-table"><thead><tr><th>Date</th><th class="text-center">Transactions</th><th class="text-center">Items sold</th><th class="text-right">Sales amount</th></tr></thead><tbody id="staffDailyBody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table></div>
+      </div>
+    `;
+    loadStaffReport();
+  };
+
+  const loadStaffReport = async () => {
+    try {
+      const data = await API.get('/reports/staff-summary');
+      const cards = [
+        { label: "Today's Sales", value: App.money(data.today.revenue), detail: `${data.today.itemsSold} items`, cls: 'stat-green' },
+        { label: 'This Week', value: App.money(data.week.revenue), detail: `${data.week.itemsSold} items`, cls: 'stat-blue' },
+        { label: 'This Month', value: App.money(data.month.revenue), detail: `${data.month.itemsSold} items`, cls: 'stat-teal' },
+        { label: 'Available Stock Value', value: App.money(data.inventory.availableRetailValue), detail: `${data.inventory.unitsAvailable} units at selling price`, cls: 'stat-amber' },
+      ];
+      document.getElementById('staffSummaryStats').innerHTML = cards.map((card) => `
+        <div class="stat-card ${card.cls}"><div class="stat-body"><span class="stat-label">${card.label}</span><span class="stat-value">${card.value}</span><span class="muted">${card.detail}</span></div></div>`).join('');
+      document.getElementById('staffDailyBody').innerHTML = data.daily.length ? data.daily.map((day) => `
+        <tr><td>${day._id}</td><td class="text-center">${day.salesCount}</td><td class="text-center">${day.itemsSold}</td><td class="text-right">${App.money(day.revenue)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No sales recorded in the last 30 days</td></tr>';
+    } catch (err) {
+      App.toast(err.message, 'error');
+    }
   };
 
   const setCurrentMonth = () => {

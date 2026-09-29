@@ -50,6 +50,9 @@ app.use('/api', requireDatabase);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/sales', require('./routes/sales'));
+app.use('/api/requests', require('./routes/requests'));
+app.use('/api/purchases', require('./routes/purchases'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/reports', require('./routes/reports'));
 

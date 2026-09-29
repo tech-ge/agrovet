@@ -5,17 +5,29 @@ const App = (() => {
     { id: 'sales', label: 'New Sale', href: '/sales.html', icon: 'cart' },
     { id: 'receipts', label: 'Receipts', href: '/receipts.html', icon: 'receipt' },
     { id: 'reports', label: 'Reports', href: '/reports.html', icon: 'chart' },
+    { id: 'purchases', label: 'Purchases', href: '/purchases.html', icon: 'layers' },
+    { id: 'users', label: 'Accounts', href: '/users.html', icon: 'users' },
   ];
 
   const mount = ({ active, title }) => {
     const user = Auth.user();
     if (!Auth.isLoggedIn()) return (window.location.href = '/login.html');
-    const isAdmin = user?.role === 'admin';
-    if (!isAdmin && !['products', 'sales'].includes(active)) {
-      return (window.location.href = '/products.html');
+    const rolePages = {
+      admin: NAV_ITEMS.map((item) => item.id),
+      staff: ['products', 'sales', 'receipts', 'reports'],
+      user: ['products', 'receipts'],
+    };
+    const allowedPages = rolePages[user?.role] || [];
+    if (!allowedPages.includes(active)) {
+      return (window.location.href = user?.role === 'staff' ? '/sales.html' : '/products.html');
     }
 
-    const visibleNavItems = isAdmin ? NAV_ITEMS : NAV_ITEMS.filter((item) => ['products', 'sales'].includes(item.id));
+    const visibleNavItems = NAV_ITEMS.filter((item) => allowedPages.includes(item.id));
+    const displayTitle = active === 'sales' && user?.role === 'staff'
+      ? 'Sales Requests'
+      : active === 'products' && user?.role === 'user'
+        ? 'Products'
+        : title;
     const nav = visibleNavItems.map(
       (item) => `
         <a href="${item.href}" class="nav-link ${item.id === active ? 'active' : ''}">
@@ -52,7 +64,7 @@ const App = (() => {
           <button class="menu-toggle" aria-label="Open navigation">
             <span data-icon="menu" data-size="22"></span>
           </button>
-          <h1 class="page-title">${title}</h1>
+          <h1 class="page-title">${displayTitle}</h1>
           <div class="topbar-right">
             <span class="date-chip">${new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
           </div>

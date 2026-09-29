@@ -1,6 +1,52 @@
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 
+exports.getStaffSummary = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfDay);
+    startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const dailyStart = new Date(startOfDay);
+    dailyStart.setDate(dailyStart.getDate() - 29);
+
+    const summaryFor = async (from) => {
+      const [summary] = await Sale.aggregate([
+        { $match: { paymentStatus: 'paid', createdAt: { $gte: from, $lte: now } } },
+        { $group: { _id: null, revenue: { $sum: '$total' }, salesCount: { $sum: 1 }, itemsSold: { $sum: { $sum: '$items.quantity' } } } },
+      ]);
+      return summary || { revenue: 0, salesCount: 0, itemsSold: 0 };
+    };
+
+    const [today, week, month, daily, inventory] = await Promise.all([
+      summaryFor(startOfDay),
+      summaryFor(startOfWeek),
+      summaryFor(startOfMonth),
+      Sale.aggregate([
+        { $match: { paymentStatus: 'paid', createdAt: { $gte: dailyStart, $lte: now } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, revenue: { $sum: '$total' }, salesCount: { $sum: 1 }, itemsSold: { $sum: { $sum: '$items.quantity' } } } },
+        { $sort: { _id: 1 } },
+      ]),
+      Product.aggregate([
+        { $match: { isActive: true } },
+        { $group: { _id: null, productsCount: { $sum: 1 }, availableRetailValue: { $sum: { $multiply: ['$stock', '$sellingPrice'] } }, unitsAvailable: { $sum: '$stock' } } },
+      ]),
+    ]);
+
+    res.json({
+      success: true,
+      today,
+      week,
+      month,
+      daily,
+      inventory: inventory[0] || { productsCount: 0, availableRetailValue: 0, unitsAvailable: 0 },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getDashboard = async (req, res, next) => {
   try {
     const now = new Date();

@@ -15,7 +15,7 @@ const formatUser = (user) => ({
 
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'All fields required' });
     }
@@ -26,7 +26,7 @@ exports.register = async (req, res, next) => {
     }
 
     const count = await User.countDocuments();
-    const assignedRole = count === 0 ? 'admin' : 'staff';
+    const assignedRole = count === 0 ? 'admin' : 'user';
 
     const user = await User.create({ name, email, password, role: assignedRole });
     const token = signToken(user._id);

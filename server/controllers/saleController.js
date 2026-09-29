@@ -4,6 +4,20 @@ const Product = require('../models/Product');
 const { calculateSaleTotals } = require('../utils/calculateProfit');
 const { generateReceiptNumber } = require('../utils/generateReceipt');
 
+const formatSale = (sale, role) => {
+  const result = sale.toObject();
+  if (role !== 'admin') {
+    delete result.totalCost;
+    delete result.totalProfit;
+    result.items = result.items.map((item) => {
+      delete item.costPrice;
+      delete item.profit;
+      return item;
+    });
+  }
+  return result;
+};
+
 exports.createSale = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -100,6 +114,7 @@ exports.getSales = async (req, res, next) => {
   try {
     const { from, to, paymentMethod, search, limit = 100 } = req.query;
     const query = {};
+    if (req.user.role === 'user') query.customerUser = req.user._id;
 
     if (from || to) {
       query.createdAt = {};
@@ -123,7 +138,7 @@ exports.getSales = async (req, res, next) => {
       .limit(Number(limit))
       .populate('servedBy', 'name');
 
-    res.json({ success: true, count: sales.length, sales });
+    res.json({ success: true, count: sales.length, sales: sales.map((sale) => formatSale(sale, req.user.role)) });
   } catch (err) {
     next(err);
   }
@@ -133,7 +148,10 @@ exports.getSale = async (req, res, next) => {
   try {
     const sale = await Sale.findById(req.params.id).populate('servedBy', 'name');
     if (!sale) return res.status(404).json({ success: false, message: 'Sale not found' });
-    res.json({ success: true, sale });
+    if (req.user.role === 'user' && String(sale.customerUser) !== String(req.user._id)) {
+      return res.status(404).json({ success: false, message: 'Sale not found' });
+    }
+    res.json({ success: true, sale: formatSale(sale, req.user.role) });
   } catch (err) {
     next(err);
   }
