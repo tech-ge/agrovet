@@ -20,6 +20,8 @@ const productSchema = new mongoose.Schema(
       default: 'Other',
     },
     description: { type: String, default: '' },
+    alternatives: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    alternativeDescription: { type: String, default: '' },
     image: { type: String, default: '' },
     costPrice: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },

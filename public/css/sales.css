@@ -36,6 +36,12 @@
 .product-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .product-info strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .product-info .muted { font-size: 11px; color: var(--slate-500); }
+.product-card { flex-wrap: wrap; }
+.product-alternatives { flex: 0 0 100%; border-top: 1px solid var(--slate-200); padding-top: 8px; font-size: 12px; }
+.product-alternatives > p { margin: 4px 0 8px; color: var(--slate-600); }
+.product-alternative-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 6px; }
+.product-alternative-item > span { display: flex; flex-direction: column; min-width: 0; }
+.product-alternative-item .muted { font-size: 11px; color: var(--slate-500); }
 
 .cart-header {
   display: flex; align-items: center; justify-content: space-between;

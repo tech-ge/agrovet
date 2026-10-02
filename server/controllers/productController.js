@@ -81,10 +81,21 @@ exports.createProduct = async (req, res, next) => {
 
 exports.updateProduct = async (req, res, next) => {
   try {
-    const editableFields = ['name', 'sku', 'size', 'category', 'description', 'sellingPrice', 'lowStockThreshold', 'unit', 'unitOfMeasure', 'supplier'];
+    const editableFields = ['name', 'sku', 'size', 'category', 'description', 'alternativeDescription', 'sellingPrice', 'lowStockThreshold', 'unit', 'unitOfMeasure', 'supplier'];
     const updates = Object.fromEntries(editableFields
       .filter((field) => req.body[field] !== undefined)
       .map((field) => [field, req.body[field]]));
+    if (req.body.alternatives !== undefined) {
+      if (!Array.isArray(req.body.alternatives)) {
+        return res.status(400).json({ success: false, message: 'Alternatives must be a list of products' });
+      }
+      const alternativeIds = [...new Set(req.body.alternatives.map(String))]
+        .filter((id) => id.toLowerCase() !== req.params.id.toLowerCase());
+      if (alternativeIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+        return res.status(400).json({ success: false, message: 'Invalid alternative product' });
+      }
+      updates.alternatives = await Product.find({ _id: { $in: alternativeIds }, isActive: true }).distinct('_id');
+    }
     const product = await Product.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,

@@ -1,5 +1,10 @@
 .cell-product strong { font-size: 13px; }
 
+.alternative-product-options { max-height: 180px; overflow-y: auto; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); padding: 4px 10px; }
+.alternative-product-option { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--slate-100); }
+.alternative-product-option:last-child { border-bottom: 0; }
+.alternative-product-option .muted { font-size: 12px; }
+
 .customer-catalog-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
 .customer-catalog-grid .card { min-width: 0; }
 .customer-product-list { display: flex; flex-direction: column; gap: 8px; }

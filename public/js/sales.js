@@ -113,28 +113,50 @@ const Sales = (() => {
       return;
     }
     el.innerHTML = list
-      .map(
-        (p) => `
+      .map((p) => {
+        const alternatives = (p.alternatives || [])
+          .map((id) => products.find((candidate) => candidate._id === String(id?._id || id)))
+          .filter(Boolean);
+        return `
         <div class="product-card ${p.stock <= 0 ? 'disabled' : ''}" data-id="${p._id}">
           <div class="product-info">
             <strong>${App.escapeHtml(p.name)}</strong>
             <span class="muted">${App.money(p.sellingPrice)} • ${App.escapeHtml(p.unit || 'pcs')}</span>
             <span class="stock-pill ${p.stock <= p.lowStockThreshold ? 'stock-low' : 'stock-ok'}">${p.stock} left</span>
           </div>
-          <button class="btn btn-primary btn-sm" ${p.stock <= 0 ? 'disabled' : ''}>
+          <button class="btn btn-primary btn-sm" data-add-product="${p._id}" ${p.stock <= 0 ? 'disabled' : ''}>
             <span data-icon="plus" data-size="14"></span> Add
           </button>
-        </div>`
-      )
+          ${p.stock <= 0 && alternatives.length ? `
+            <div class="product-alternatives">
+              <strong>Available alternatives</strong>
+              ${p.alternativeDescription ? `<p>${App.escapeHtml(p.alternativeDescription)}</p>` : ''}
+              ${alternatives.map((alternative) => `
+                <div class="product-alternative-item">
+                  <span><strong>${App.escapeHtml(alternative.name)}</strong><span class="muted">${App.money(alternative.sellingPrice)} - ${alternative.stock} in stock</span></span>
+                  <button class="btn btn-ghost btn-sm" data-add-product="${alternative._id}" ${alternative.stock <= 0 ? 'disabled' : ''}>Add</button>
+                </div>`).join('')}
+            </div>` : ''}
+        </div>`;
+      })
       .join('');
     Icons.render(el);
 
-    el.querySelectorAll('.product-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const p = products.find((x) => x._id === card.dataset.id);
-        if (p && p.stock > 0) addToCart(p);
-      });
-    });
+    el.onclick = (event) => {
+      const button = event.target.closest('button[data-add-product]');
+      if (button) {
+        if (!button.disabled) {
+          const product = products.find((candidate) => candidate._id === button.dataset.addProduct);
+          if (product) addToCart(product);
+        }
+        return;
+      }
+      if (event.target.closest('.product-alternatives')) return;
+      const card = event.target.closest('.product-card');
+      if (!card || card.classList.contains('disabled')) return;
+      const product = products.find((candidate) => candidate._id === card.dataset.id);
+      if (product) addToCart(product);
+    };
   };
 
   const addToCart = (p) => {
