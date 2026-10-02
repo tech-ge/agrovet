@@ -1,18 +1,21 @@
 /* Dashboard-specific tweaks (mostly relies on global styles) */
 .stat-value { white-space: nowrap; }
 
-.staff-alternatives-panel { max-width: 900px; }
-.staff-alternative-list { display: flex; flex-direction: column; }
-.staff-alternative-product { padding: 14px 0; border-bottom: 1px solid var(--slate-100); }
-.staff-alternative-product:last-child { border-bottom: 0; }
-.staff-alternative-source { display: flex; align-items: center; gap: 8px; }
-.staff-alternative-product > p { margin: 6px 0 0; }
-.staff-alternative-options { margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--green-500); }
+.staff-alternatives-section { width: 100%; }
+.staff-alternatives-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.staff-alternatives-header h2 { margin: 0; font-size: 20px; }
+.staff-alternative-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px; }
+.staff-main-product { min-width: 0; padding: 14px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: #fff; }
+.staff-main-product-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.staff-main-product-header h3 { margin: 2px 0 0; font-size: 16px; overflow-wrap: anywhere; }
+.staff-main-product > p { margin: 10px 0; }
+.staff-main-product > h4 { margin: 14px 0 4px; font-size: 13px; }
+.staff-alternative-options { padding-top: 4px; }
 .staff-alternative-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
 .staff-alternative-option > span { display: flex; flex-direction: column; min-width: 0; }
 .staff-alternative-option .muted { font-size: 12px; }
 
 @media (max-width: 600px) {
-	.staff-alternative-source { align-items: flex-start; flex-direction: column; }
-	.staff-alternative-option { align-items: flex-start; }
+	.staff-alternatives-header { align-items: flex-start; }
+	.staff-main-product-header { align-items: flex-start; flex-direction: column; }
 }

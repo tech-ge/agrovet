@@ -82,28 +82,29 @@ const Dashboard = (() => {
     try {
       const { products } = await API.get('/products');
       const productsById = new Map(products.map((product) => [product._id, product]));
-      const unavailable = products.filter((product) => product.stock <= 0 && (product.alternatives || []).length);
+      const configuredProducts = products.filter((product) => (product.alternatives || []).length);
       const content = document.getElementById('page-content');
 
       content.innerHTML = `
-        <section class="card staff-alternatives-panel">
-          <div class="card-header">
-            <h3>Alternatives to offer</h3>
+        <section class="staff-alternatives-section">
+          <header class="staff-alternatives-header">
+            <h2>Products and alternatives</h2>
             <a href="/sales.html" class="link">New sale</a>
-          </div>
-          <div class="staff-alternative-list">
-            ${unavailable.length ? unavailable.map((product) => {
+          </header>
+          <div class="staff-alternative-grid">
+            ${configuredProducts.length ? configuredProducts.map((product) => {
               const alternatives = product.alternatives
                 .map((id) => productsById.get(String(id?._id || id)))
                 .filter(Boolean);
               return `
-                <article class="staff-alternative-product">
-                  <div class="staff-alternative-source">
-                    <strong>${App.escapeHtml(product.name)}</strong>
-                    <span class="badge">Out of stock</span>
-                  </div>
+                <article class="staff-main-product">
+                  <header class="staff-main-product-header">
+                    <div><span class="muted">Main product</span><h3>${App.escapeHtml(product.name)}</h3></div>
+                    <span class="stock-pill ${product.stock > 0 ? 'stock-ok' : 'stock-low'}">${product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</span>
+                  </header>
                   ${product.alternativeDescription ? `<p class="muted">${App.escapeHtml(product.alternativeDescription)}</p>` : ''}
-                  <div class="staff-alternative-options">
+                  <h4>Alternative products</h4>
+                  <div class="staff-alternative-options" aria-label="Alternative products for ${App.escapeHtml(product.name)}">
                     ${alternatives.map((alternative) => `
                       <div class="staff-alternative-option">
                         <span><strong>${App.escapeHtml(alternative.name)}</strong><span class="muted">${App.money(alternative.sellingPrice)} - ${alternative.stock} in stock</span></span>
@@ -113,7 +114,7 @@ const Dashboard = (() => {
                       </div>`).join('')}
                   </div>
                 </article>`;
-            }).join('') : '<p class="empty">No out-of-stock products with alternatives.</p>'}
+            }).join('') : '<p class="empty">No products have alternatives configured.</p>'}
           </div>
         </section>
       `;
