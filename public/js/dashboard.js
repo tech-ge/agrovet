@@ -1,5 +1,6 @@
 const Dashboard = (() => {
   const render = async () => {
+    if (Auth.user()?.role === 'staff') return renderStaff();
     try {
       const { data } = await API.get('/reports/dashboard');
       const content = document.getElementById('page-content');
@@ -70,6 +71,51 @@ const Dashboard = (() => {
             </div>
           </div>
         </div>
+      `;
+      Icons.render(content);
+    } catch (err) {
+      App.toast(err.message, 'error');
+    }
+  };
+
+  const renderStaff = async () => {
+    try {
+      const { products } = await API.get('/products');
+      const productsById = new Map(products.map((product) => [product._id, product]));
+      const unavailable = products.filter((product) => product.stock <= 0 && (product.alternatives || []).length);
+      const content = document.getElementById('page-content');
+
+      content.innerHTML = `
+        <section class="card staff-alternatives-panel">
+          <div class="card-header">
+            <h3>Alternatives to offer</h3>
+            <a href="/sales.html" class="link">New sale</a>
+          </div>
+          <div class="staff-alternative-list">
+            ${unavailable.length ? unavailable.map((product) => {
+              const alternatives = product.alternatives
+                .map((id) => productsById.get(String(id?._id || id)))
+                .filter(Boolean);
+              return `
+                <article class="staff-alternative-product">
+                  <div class="staff-alternative-source">
+                    <strong>${App.escapeHtml(product.name)}</strong>
+                    <span class="badge">Out of stock</span>
+                  </div>
+                  ${product.alternativeDescription ? `<p class="muted">${App.escapeHtml(product.alternativeDescription)}</p>` : ''}
+                  <div class="staff-alternative-options">
+                    ${alternatives.map((alternative) => `
+                      <div class="staff-alternative-option">
+                        <span><strong>${App.escapeHtml(alternative.name)}</strong><span class="muted">${App.money(alternative.sellingPrice)} - ${alternative.stock} in stock</span></span>
+                        ${alternative.stock > 0
+                          ? `<a class="btn btn-ghost btn-sm" href="/sales.html?product=${encodeURIComponent(alternative._id)}">Sell</a>`
+                          : '<span class="badge">Out of stock</span>'}
+                      </div>`).join('')}
+                  </div>
+                </article>`;
+            }).join('') : '<p class="empty">No out-of-stock products with alternatives.</p>'}
+          </div>
+        </section>
       `;
       Icons.render(content);
     } catch (err) {

@@ -14,7 +14,7 @@ const App = (() => {
     if (!Auth.isLoggedIn()) return (window.location.href = '/login.html');
     const rolePages = {
       admin: NAV_ITEMS.map((item) => item.id),
-      staff: ['products', 'sales', 'receipts', 'reports'],
+      staff: ['dashboard', 'products', 'sales', 'receipts', 'reports'],
       user: ['products', 'receipts'],
     };
     const allowedPages = rolePages[user?.role] || [];

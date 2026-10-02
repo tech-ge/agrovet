@@ -365,6 +365,7 @@ const Sales = (() => {
   };
 
   const init = async () => {
+    const selectedProductId = new URLSearchParams(window.location.search).get('product');
     if (Auth.user()?.role === 'staff') {
       const content = document.getElementById('page-content');
       content.innerHTML = `
@@ -390,6 +391,14 @@ const Sales = (() => {
     try {
       await loadProducts();
       renderProductList();
+      if (selectedProductId && Auth.user()?.role === 'staff') {
+        const selectedProduct = products.find((product) => product._id === selectedProductId);
+        if (selectedProduct?.stock > 0) addToCart(selectedProduct);
+        else App.toast('This alternative is no longer in stock', 'error');
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete('product');
+        window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+      }
     } catch (err) {
       App.toast(err.message, 'error');
     }
