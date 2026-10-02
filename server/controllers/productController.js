@@ -53,10 +53,26 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.createProduct = async (req, res, next) => {
+  const productData = { ...req.body };
+  if (productData.alternatives !== undefined) {
+    if (!Array.isArray(productData.alternatives)) {
+      return res.status(400).json({ success: false, message: 'Alternatives must be a list of products' });
+    }
+    const alternativeIds = [...new Set(productData.alternatives.map(String))];
+    if (alternativeIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({ success: false, message: 'Invalid alternative product' });
+    }
+    try {
+      productData.alternatives = await Product.find({ _id: { $in: alternativeIds }, isActive: true }).distinct('_id');
+    } catch (err) {
+      return next(err);
+    }
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const [product] = await Product.create([req.body], { session });
+    const [product] = await Product.create([productData], { session });
     if (product.stock > 0) {
       await StockPurchase.create([{
         product: product._id,

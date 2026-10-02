@@ -308,21 +308,20 @@ const Products = (() => {
           <label>Description</label>
           <textarea class="input" name="description" rows="2">${App.escapeHtml(p.description || '')}</textarea>
         </div>
-        ${isEdit ? `
-          <div class="form-group span-2">
-            <label>Alternative products</label>
-            <div class="alternative-product-options">
-              ${state.products.filter((candidate) => candidate._id !== p._id).map((candidate) => `
-                <label class="alternative-product-option">
-                  <input type="checkbox" name="alternatives" value="${candidate._id}" ${(p.alternatives || []).some((id) => String(id?._id || id) === candidate._id) ? 'checked' : ''} />
-                  <span>${App.escapeHtml(candidate.name)} <span class="muted">(${candidate.stock} in stock)</span></span>
-                </label>`).join('') || '<p class="muted">No other products available.</p>'}
-            </div>
+        <div class="form-group span-2">
+          <label>Alternative products</label>
+          <div class="alternative-product-options">
+            ${state.products.filter((candidate) => candidate._id !== p._id).map((candidate) => `
+              <label class="alternative-product-option">
+                <input type="checkbox" name="alternatives" value="${candidate._id}" ${(p.alternatives || []).some((id) => String(id?._id || id) === candidate._id) ? 'checked' : ''} />
+                <span>${App.escapeHtml(candidate.name)} <span class="muted">(${candidate.stock} in stock)</span></span>
+              </label>`).join('') || '<p class="muted">No other products available.</p>'}
           </div>
-          <div class="form-group span-2">
-            <label>Alternative description for staff</label>
-            <textarea class="input" name="alternativeDescription" rows="2" placeholder="When to offer these alternatives">${App.escapeHtml(p.alternativeDescription || '')}</textarea>
-          </div>` : ''}
+        </div>
+        <div class="form-group span-2">
+          <label>Alternative description for staff</label>
+          <textarea class="input" name="alternativeDescription" rows="2" placeholder="When to offer these alternatives">${App.escapeHtml(p.alternativeDescription || '')}</textarea>
+        </div>
       </form>
       <div class="modal-actions">
         <button class="btn btn-ghost" data-close>Cancel</button>
@@ -343,10 +342,8 @@ const Products = (() => {
         lowStockThreshold: Number(fd.get('lowStockThreshold')),
         description: fd.get('description').trim(),
       };
-      if (isEdit) {
-        payload.alternatives = fd.getAll('alternatives');
-        payload.alternativeDescription = fd.get('alternativeDescription').trim();
-      }
+      payload.alternatives = fd.getAll('alternatives');
+      payload.alternativeDescription = fd.get('alternativeDescription').trim();
 
       if (!payload.name || payload.sellingPrice < 0) {
         return App.toast('Please fill all required fields', 'error');
