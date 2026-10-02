@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const saleItemSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    stockBatchId: { type: mongoose.Schema.Types.ObjectId },
     name: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     costPrice: { type: Number, required: true, min: 0 },

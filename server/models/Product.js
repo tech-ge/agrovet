@@ -1,4 +1,11 @@
 const mongoose = require('mongoose');
+const stockBatchSchema = new mongoose.Schema({
+  quantity: { type: Number, required: true, min: 0 },
+  costPrice: { type: Number, required: true, min: 0 },
+  sellingPrice: { type: Number, required: true, min: 0 },
+  receivedAt: { type: Date, default: Date.now },
+});
+
 
 const productSchema = new mongoose.Schema(
   {
@@ -26,6 +33,7 @@ const productSchema = new mongoose.Schema(
     costPrice: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0, default: 0 },
+      stockBatches: { type: [stockBatchSchema], default: [] },
     lowStockThreshold: { type: Number, default: 5 },
     unit: { type: String, default: 'pcs' },
     unitOfMeasure: { type: String, default: 'pcs', trim: true },

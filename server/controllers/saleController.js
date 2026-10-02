@@ -4,9 +4,11 @@ const Product = require('../models/Product');
 const { calculateSaleTotals } = require('../utils/calculateProfit');
 const { generateReceiptNumber } = require('../utils/generateReceipt');
 const { paystackRequest } = require('../config/paystack');
+const { allocateStock, restoreStock } = require('../utils/stockBatches');
 
 const formatSale = (sale, role) => {
   const result = sale.toObject();
+  result.items.forEach((item) => delete item.stockBatchId);
   if (role !== 'admin') {
     delete result.totalCost;
     delete result.totalProfit;
@@ -50,20 +52,22 @@ exports.createSale = async (req, res, next) => {
     const products = await Product.find({ _id: { $in: productIds }, isActive: true }).session(session);
     const productMap = new Map(products.map((p) => [String(p._id), p]));
 
-    const verifiedItems = items.map((item) => {
+    const verifiedItems = [];
+    for (const item of items) {
       const product = productMap.get(String(item.product));
       if (!product) throw Object.assign(new Error(`Product not found: ${item.product}`), { statusCode: 404 });
-      if (product.stock < item.quantity) {
-        throw Object.assign(new Error(`Insufficient stock for ${product.name} (available: ${product.stock})`), { statusCode: 400 });
+      const allocations = allocateStock(product, item.quantity);
+      for (const allocation of allocations) {
+        verifiedItems.push({
+          product: product._id,
+          stockBatchId: allocation.stockBatchId,
+          name: product.name,
+          quantity: allocation.quantity,
+          costPrice: allocation.costPrice,
+          sellingPrice: isStaff ? allocation.sellingPrice : item.sellingPrice ?? allocation.sellingPrice,
+        });
       }
-      return {
-        product: product._id,
-        name: product.name,
-        quantity: item.quantity,
-        costPrice: product.costPrice,
-        sellingPrice: isStaff ? product.sellingPrice : item.sellingPrice ?? product.sellingPrice,
-      };
-    });
+    }
 
     const totals = calculateSaleTotals(verifiedItems, { discount, tax: isStaff ? 0 : tax });
     if (Number(discount) > totals.subtotal) {
@@ -88,16 +92,7 @@ exports.createSale = async (req, res, next) => {
       }
     }
 
-    for (const item of totals.items) {
-      const result = await Product.updateOne(
-        { _id: item.product, stock: { $gte: item.quantity } },
-        { $inc: { stock: -item.quantity } },
-        { session }
-      );
-      if (result.modifiedCount === 0) {
-        throw Object.assign(new Error(`Stock update failed for ${item.name}`), { statusCode: 400 });
-      }
-    }
+    for (const product of products) await product.save({ session });
 
     const [sale] = await Sale.create(
       [
@@ -188,20 +183,20 @@ exports.refundSale = async (req, res, next) => {
     if (!sale) throw Object.assign(new Error('Sale not found'), { statusCode: 404 });
     if (sale.paymentStatus === 'failed') throw Object.assign(new Error('Already refunded'), { statusCode: 400 });
 
+    const products = await Product.find({ _id: { $in: sale.items.map((item) => item.product) } }).session(session);
+    const productMap = new Map(products.map((product) => [String(product._id), product]));
     for (const item of sale.items) {
-      await Product.updateOne(
-        { _id: item.product },
-        { $inc: { stock: item.quantity } },
-        { session }
-      );
+      const product = productMap.get(String(item.product));
+      if (product) restoreStock(product, item, sale.createdAt);
     }
+    for (const product of products) await product.save({ session });
 
     sale.paymentStatus = 'failed';
     sale.notes = `${sale.notes || ''}\n[REFUNDED ${new Date().toISOString()}]`.trim();
     await sale.save({ session });
 
     await session.commitTransaction();
-    res.json({ success: true, sale });
+    res.json({ success: true, sale: formatSale(sale, req.user.role) });
   } catch (err) {
     await session.abortTransaction();
     next(err);

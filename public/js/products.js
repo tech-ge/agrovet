@@ -412,18 +412,35 @@ const Products = (() => {
         <div class="form-group span-2"><label>Product *</label><select class="input" name="product" required>${options}</select></div>
         <div class="form-group"><label>Quantity received *</label><input class="input" type="number" min="1" step="1" name="quantity" required /></div>
         <div class="form-group"><label>Total amount paid *</label><input class="input" type="number" min="0.01" step="0.01" name="totalCost" required /></div>
+        <div class="form-group span-2"><p class="muted" id="purchasePricePreview">New batch price is its unit cost plus KES 100. Existing batches keep their prices and sell first.</p></div>
         <div class="form-group"><label>Supplier</label><input class="input" name="supplier" /></div>
         <div class="form-group"><label>Invoice / reference</label><input class="input" name="reference" /></div>
         <div class="form-group span-2"><label>Purchase notes</label><textarea class="input" name="notes" rows="2"></textarea></div>
       </form>
       <div class="modal-actions"><button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-primary" id="savePurchaseBtn">Record Purchase</button></div>
     `);
+    const purchaseForm = document.getElementById('purchaseForm');
+    const updatePricePreview = () => {
+      const product = state.products.find((entry) => entry._id === purchaseForm.elements.product.value);
+      const quantity = Number(purchaseForm.elements.quantity.value);
+      const totalCost = Number(purchaseForm.elements.totalCost.value);
+      const preview = document.getElementById('purchasePricePreview');
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(totalCost) || totalCost <= 0) {
+        preview.textContent = 'New batch price is its unit cost plus KES 100. Existing batches keep their prices and sell first.';
+        return;
+      }
+      const batchPrice = Math.round((totalCost / quantity + 100) * 100) / 100;
+      preview.textContent = `New batch selling price: ${App.money(batchPrice)} each. Existing ${product.stock} units keep their batch prices and sell first.`;
+    };
+    purchaseForm.addEventListener('input', updatePricePreview);
+    purchaseForm.elements.product.addEventListener('change', updatePricePreview);
+    updatePricePreview();
     document.getElementById('savePurchaseBtn').addEventListener('click', async () => {
       const form = document.getElementById('purchaseForm');
       if (!form.reportValidity()) return;
       const fields = new FormData(form);
       try {
-        await API.post('/purchases', {
+        const result = await API.post('/purchases', {
           product: fields.get('product'),
           quantity: Number(fields.get('quantity')),
           totalCost: Number(fields.get('totalCost')),
@@ -432,7 +449,9 @@ const Products = (() => {
           notes: fields.get('notes').trim(),
         });
         App.modal.hide();
-        App.toast('Stock purchase recorded');
+        App.toast(result.batchActive
+          ? `Stock received. New price ${App.money(result.batchSellingPrice)} is active.`
+          : `Stock received at ${App.money(result.batchSellingPrice)}. Existing stock sells first.`);
         load();
       } catch (err) {
         App.toast(err.message, 'error');

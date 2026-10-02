@@ -93,6 +93,7 @@ const Dashboard = (() => {
           </header>
           <div class="staff-alternative-grid">
             ${configuredProducts.length ? configuredProducts.map((product) => {
+              const priceTiers = (product.priceTiers || []).filter((tier) => tier.quantity > 0);
               const alternatives = product.alternatives
                 .map((id) => productsById.get(String(id?._id || id)))
                 .filter(Boolean);
@@ -102,6 +103,7 @@ const Dashboard = (() => {
                     <div><span class="muted">Main product</span><h3>${App.escapeHtml(product.name)}</h3></div>
                     <span class="stock-pill ${product.stock > 0 ? 'stock-ok' : 'stock-low'}">${product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</span>
                   </header>
+                  ${priceTiers.length ? `<div class="staff-price-tiers"><span>Current: ${App.money(priceTiers[0].sellingPrice)} for the next ${priceTiers[0].quantity}</span>${priceTiers[1] ? `<span>Then: ${App.money(priceTiers[1].sellingPrice)} for ${priceTiers[1].quantity}</span>` : ''}</div>` : ''}
                   ${product.alternativeDescription ? `<p class="muted">${App.escapeHtml(product.alternativeDescription)}</p>` : ''}
                   <h4>Alternative products</h4>
                   <div class="staff-alternative-options" aria-label="Alternative products for ${App.escapeHtml(product.name)}">

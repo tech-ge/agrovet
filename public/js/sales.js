@@ -114,6 +114,7 @@ const Sales = (() => {
     }
     el.innerHTML = list
       .map((p) => {
+        const priceTiers = (p.priceTiers || []).filter((tier) => tier.quantity > 0);
         const alternatives = (p.alternatives || [])
           .map((id) => products.find((candidate) => candidate._id === String(id?._id || id)))
           .filter(Boolean);
@@ -122,6 +123,7 @@ const Sales = (() => {
           <div class="product-info">
             <strong>${App.escapeHtml(p.name)}</strong>
             <span class="muted">${App.money(p.sellingPrice)} • ${App.escapeHtml(p.unit || 'pcs')}</span>
+            ${priceTiers.length > 1 ? `<span class="muted">Next ${priceTiers[1].quantity} at ${App.money(priceTiers[1].sellingPrice)}</span>` : ''}
             <span class="stock-pill ${p.stock <= p.lowStockThreshold ? 'stock-low' : 'stock-ok'}">${p.stock} left</span>
           </div>
           <button class="btn btn-primary btn-sm" data-add-product="${p._id}" ${p.stock <= 0 ? 'disabled' : ''}>
@@ -160,9 +162,13 @@ const Sales = (() => {
   };
 
   const addToCart = (p) => {
-    const existing = cart.find((c) => c.product === p._id);
+    const activeTier = (p.priceTiers || []).find((tier) => tier.quantity > 0)
+      || { quantity: p.stock, sellingPrice: p.sellingPrice };
+    const existing = cart.find((c) => c.product === p._id && c.sellingPrice === activeTier.sellingPrice);
     const currentQty = existing ? existing.quantity : 0;
-    if (currentQty + 1 > p.stock) return App.toast('Not enough stock', 'error');
+    if (currentQty + 1 > activeTier.quantity) {
+      return App.toast(`Only ${activeTier.quantity} units remain at ${App.money(activeTier.sellingPrice)}. Complete this sale before using the next price tier.`, 'error');
+    }
 
     if (existing) existing.quantity += 1;
     else
@@ -171,8 +177,8 @@ const Sales = (() => {
         name: p.name,
         quantity: 1,
         costPrice: p.costPrice,
-        sellingPrice: p.sellingPrice,
-        stock: p.stock,
+        sellingPrice: activeTier.sellingPrice,
+        stock: activeTier.quantity,
       });
     renderCart();
   };

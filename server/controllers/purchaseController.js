@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const StockPurchase = require('../models/StockPurchase');
+const { addStockBatch } = require('../utils/stockBatches');
 
 exports.createPurchase = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -20,11 +21,13 @@ exports.createPurchase = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    const previousStock = product.stock;
-    const nextStock = previousStock + receivedQuantity;
     const unitCost = paidAmount / receivedQuantity;
-    product.costPrice = ((previousStock * product.costPrice) + paidAmount) / nextStock;
-    product.stock = nextStock;
+    const batchSellingPrice = Math.round((unitCost + 100) * 100) / 100;
+    addStockBatch(product, {
+      quantity: receivedQuantity,
+      costPrice: unitCost,
+      sellingPrice: batchSellingPrice,
+    });
     await product.save({ session });
 
     await StockPurchase.create([{
@@ -39,8 +42,15 @@ exports.createPurchase = async (req, res, next) => {
       receivedBy: req.user._id,
     }], { session });
 
+    const activeBatch = product.stockBatches.find((batch) => batch.quantity > 0);
+    const newestBatch = product.stockBatches[product.stockBatches.length - 1];
     await session.commitTransaction();
-    res.status(201).json({ success: true, product: { _id: product._id, stock: product.stock, sellingPrice: product.sellingPrice } });
+    res.status(201).json({
+      success: true,
+      product: { _id: product._id, stock: product.stock, sellingPrice: product.sellingPrice },
+      batchSellingPrice,
+      batchActive: String(activeBatch?._id) === String(newestBatch?._id),
+    });
   } catch (err) {
     await session.abortTransaction();
     next(err);

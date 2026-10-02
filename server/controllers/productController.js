@@ -1,9 +1,23 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const StockPurchase = require('../models/StockPurchase');
+const { ensureStockBatches, addStockBatch, allocateStock, syncActivePrice } = require('../utils/stockBatches');
 
 const formatProduct = (product, role) => {
   const result = product.toObject({ virtuals: true });
+  ensureStockBatches(product);
+  syncActivePrice(product);
+  const activeBatch = product.stockBatches.find((batch) => batch.quantity > 0);
+  result.costPrice = activeBatch?.costPrice ?? result.costPrice;
+  result.sellingPrice = activeBatch?.sellingPrice ?? result.sellingPrice;
+  result.activeStock = activeBatch?.quantity ?? product.stock;
+  result.priceTiers = product.stockBatches
+    .filter((batch) => batch.quantity > 0)
+    .map((batch) => ({ quantity: batch.quantity, sellingPrice: batch.sellingPrice }));
+  if (!result.priceTiers.length && product.stock > 0) {
+    result.priceTiers = [{ quantity: product.stock, sellingPrice: product.sellingPrice }];
+  }
+  delete result.stockBatches;
   if (role !== 'admin') {
     delete result.costPrice;
     delete result.profitPerUnit;
@@ -13,6 +27,10 @@ const formatProduct = (product, role) => {
     delete result.stock;
     delete result.lowStockThreshold;
     delete result.isLowStock;
+    delete result.activeStock;
+    delete result.priceTiers;
+    delete result.alternatives;
+    delete result.alternativeDescription;
   }
   return result;
 };
@@ -117,6 +135,16 @@ exports.updateProduct = async (req, res, next) => {
       runValidators: true,
     });
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    if (updates.sellingPrice !== undefined) {
+      ensureStockBatches(product);
+      const activeBatch = product.stockBatches.find((batch) => batch.quantity > 0);
+      if (activeBatch) {
+        activeBatch.sellingPrice = Number(updates.sellingPrice);
+        product.sellingPrice = activeBatch.sellingPrice;
+        product.costPrice = activeBatch.costPrice;
+        await product.save();
+      }
+    }
     res.json({ success: true, product });
   } catch (err) {
     next(err);
@@ -144,13 +172,29 @@ exports.adjustStock = async (req, res, next) => {
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
     const qty = Number(quantity);
-    if (isNaN(qty) || qty < 0) {
+    if (!Number.isInteger(qty) || qty < 0) {
       return res.status(400).json({ success: false, message: 'Invalid quantity' });
     }
 
-    if (operation === 'add') product.stock += qty;
-    else if (operation === 'subtract') product.stock = Math.max(0, product.stock - qty);
-    else product.stock = qty;
+    if (operation === 'add') {
+      if (qty > 0) addStockBatch(product, {
+        quantity: qty,
+        costPrice: product.costPrice,
+        sellingPrice: Math.round((product.costPrice + 100) * 100) / 100,
+      });
+    } else if (operation === 'subtract') {
+      const quantityToRemove = Math.min(qty, product.stock);
+      if (quantityToRemove > 0) allocateStock(product, quantityToRemove);
+    } else if (qty > product.stock) {
+      addStockBatch(product, {
+        quantity: qty - product.stock,
+        costPrice: product.costPrice,
+        sellingPrice: Math.round((product.costPrice + 100) * 100) / 100,
+      });
+    } else if (qty < product.stock) {
+      allocateStock(product, product.stock - qty);
+    }
+    syncActivePrice(product);
 
     await product.save();
     res.json({ success: true, product });

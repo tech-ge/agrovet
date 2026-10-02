@@ -5,12 +5,14 @@ const SaleRequest = require('../models/SaleRequest');
 const User = require('../models/User');
 const { calculateSaleTotals } = require('../utils/calculateProfit');
 const { generateReceiptNumber } = require('../utils/generateReceipt');
+const { allocateStock } = require('../utils/stockBatches');
 
 const formatSale = (sale) => {
   const result = sale.toObject();
   delete result.totalCost;
   delete result.totalProfit;
   result.items = result.items.map((item) => {
+    delete item.stockBatchId;
     delete item.costPrice;
     delete item.profit;
     return item;
@@ -91,23 +93,26 @@ exports.fulfillRequest = async (req, res, next) => {
     }
     const products = await Product.find({ _id: { $in: request.items.map((item) => item.product) }, isActive: true }).session(session);
     const productMap = new Map(products.map((product) => [String(product._id), product]));
-    const verifiedItems = request.items.map((item) => {
+    const verifiedItems = [];
+    for (const item of request.items) {
       const product = productMap.get(String(item.product));
       if (!product) throw Object.assign(new Error(`Product no longer available: ${item.name}`), { statusCode: 400 });
-      if (product.stock < item.quantity) throw Object.assign(new Error(`Insufficient stock for ${product.name}`), { statusCode: 400 });
-      return { product: product._id, name: product.name, quantity: item.quantity, costPrice: product.costPrice, sellingPrice: product.sellingPrice };
-    });
+      const allocations = allocateStock(product, item.quantity);
+      for (const allocation of allocations) {
+        verifiedItems.push({
+          product: product._id,
+          stockBatchId: allocation.stockBatchId,
+          name: product.name,
+          quantity: allocation.quantity,
+          costPrice: allocation.costPrice,
+          sellingPrice: allocation.sellingPrice,
+        });
+      }
+    }
     const totals = calculateSaleTotals(verifiedItems, { discount, tax: 0 });
     if (discount > totals.subtotal) throw Object.assign(new Error('Discount cannot exceed the subtotal'), { statusCode: 400 });
 
-    for (const item of totals.items) {
-      const result = await Product.updateOne(
-        { _id: item.product, stock: { $gte: item.quantity } },
-        { $inc: { stock: -item.quantity } },
-        { session }
-      );
-      if (!result.modifiedCount) throw Object.assign(new Error(`Stock update failed for ${item.name}`), { statusCode: 400 });
-    }
+    for (const product of products) await product.save({ session });
 
     const [sale] = await Sale.create([{
       receiptNumber: generateReceiptNumber(),
